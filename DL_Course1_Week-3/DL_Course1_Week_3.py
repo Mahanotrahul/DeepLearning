@@ -72,10 +72,10 @@ if override == 0:
         print("X.shape : " + str(X.shape))
 
     elif dataset_option == "N":
-        test = sio.loadmat('datasets/ex4data1.mat')
+        test = sio.loadmat('datasets/Digit_Classification.mat')
         X = test['X'][:]
-        Y = test['y'][:]
-        X, Y = X.T, Y.T
+        Y = test['Y'][:]
+        #X, Y = X.T, Y.T
         sel = np.arange(X.shape[1])
         np.random.shuffle(sel)
         print(sel)
@@ -86,19 +86,20 @@ if override == 0:
         X = X_train
         print(X.shape)
         print(X_test.shape)
-        for i in range(Y.shape[1]):
-            if Y[:,i] == 10:
-                Y[:,i] = 0
-        print(np.amax(Y))
-        new_rows = np.zeros((np.amax(Y), Y.shape[1]))
-        Y = np.vstack([Y, new_rows])
-        print(Y.shape)
+        #for i in range(Y.shape[1]):
+        #    if Y[:,i] == 10:
+        #        Y[:,i] = 0
+        #print(np.amax(Y))
+        #new_rows = np.zeros((np.amax(Y), Y.shape[1]))
+        #Y = np.vstack([Y, new_rows])
+        #print(Y.shape)
 
-        for i in range(Y.shape[1]):
-            c = i//500
-            Y[c,i] = 1
-            Y[0,i] = 0
-            Y[np.argmax(Y[:,i]), i] = 1
+        #for i in range(Y.shape[1]):
+        #    c = i//500
+        #    Y[c,i] = 1
+        #    Y[0,i] = 0
+        #    Y[np.argmax(Y[:,i]), i] = 1
+        #sio.savemat("datasets/Digit_Classification.mat", {"X": X, "Y": Y})
         Y_train = Y[:,sel[0:set_divide]]
         Y_test = Y[:,sel[set_divide:Y.shape[1]]]
         Y = Y_train
