@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ProfilingTarget xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectTarget>
+    <TargetProject>bc37b8df-aef7-4307-88e1-90948b1f5645</TargetProject>
+    <FriendlyName>DL_Course1_Week-3</FriendlyName>
+  </ProjectTarget>
+  <Reports>
+    <Report>
+      <Filename>C:\Users\user\AppData\Local\Temp\DL_Course1_Week-3_20180515.vsp</Filename>
+    </Report>
+  </Reports>
+</ProfilingTarget>
