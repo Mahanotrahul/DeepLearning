@@ -64,6 +64,7 @@ def calculate_cost_and_grads(w, b, X, Y):
 
     grads = {"dw" : dw,
              "db" : db}
+
     return grads, cost
 
 w, b, X, Y = np.array([[1.],[2.]]), 2., np.array([[1.,2.,-1.],[3.,4.,-3.2]]), np.array([[1,0,1]])
