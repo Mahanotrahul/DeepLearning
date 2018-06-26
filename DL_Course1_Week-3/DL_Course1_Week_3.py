@@ -166,6 +166,14 @@ def sigmoid(z):
     x = 1/(1 + np.exp(-z))
     return x
 
+def sigmoid_backward(A):
+    s = A*(1 - A)
+
+    return s
+
+def tanh_backward(A1):
+    s = 1 - np.power(A1,2)
+    return s
 
 def layer_sizes(X, Y, n_h):
     n_x = X.shape[0]
@@ -173,6 +181,7 @@ def layer_sizes(X, Y, n_h):
     return n_x, n_h, n_y
 
 def initialize_parameters(X, Y, n_h):
+    np.random.seed(3)
     n_x, n_h, n_y = layer_sizes(X, Y, n_h)
 
     W1 = np.random.randn(n_h, n_x)*0.01
@@ -232,7 +241,10 @@ def backward_propagation(params, parameters, X, Y):
     dZ2 = A2 - Y
     dW2 = (np.dot(dZ2, A1.T))/m
     db2 = (np.sum(dZ2, axis = 1, keepdims= True))/m
-    dZ1 = np.multiply(np.dot(W2.T,dZ2),(1 - np.power(A1,2)))
+    if override == 0 and dataset_option == "X":
+        dZ1 = np.multiply(np.dot(W2.T,dZ2), sigmoid_backward(A1))
+    else:
+        dZ1 = np.multiply(np.dot(W2.T,dZ2), tanh_backward(A1))
     dW1 = (np.dot(dZ1, X.T))/m
     db1 = (np.sum(dZ1, axis = 1, keepdims = True))/m
 
