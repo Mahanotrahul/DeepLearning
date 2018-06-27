@@ -509,9 +509,21 @@ print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - Y)
 #print ('Training Accuracy: %d' % float((np.dot(Y,Y_prediction_train.T) + np.dot(1-Y,1-Y_prediction_train.T))/float(Y.size)*100) + '%')
 
 
+def example_X(num_px):
+    try:
+        # Example of a picture that was wrongly classified.
+        index = int(input("Index of Picture: "))
+        print(Y_prediction_test[0,index])
+        plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
+        print ("y = " + str(test_set_y[0,index]) + ", you predicted that it is a \"" + classes[int(Y_prediction_test[0,index])].decode("utf-8") +  "\" picture.")
+        plt.show()
+        example_X(num_px)
+    except:
+        return
+
 def example_number(Y_prediction_test):
     sel = np.random.randint(1, X_test.shape[1])
-    plt.imshow(X_test[:,sel].reshape(20, 20))
+    plt.imshow(X_test[:,sel].reshape(28, 28))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
     plt.show()
 
@@ -529,6 +541,8 @@ if override == 0:
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
+        num_px = train_set_x_orig.shape[1]
+        example_X(num_px)
     elif dataset_option == "N":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
@@ -543,26 +557,11 @@ if override == 0:
     plt.plot(costs)
     plt.ylabel('cost')
     plt.xlabel('iterations (per hundreds)')
-    plt.title("Learning rate =" + str(lr))
+    plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " iter : " + str(ni))
     plt.show()
 
 
-def example_test(num_px):
-    try:
-        # Example of a picture that was wrongly classified.
-        index = int(input("Index of Picture: "))
-        print(Y_prediction_test[0,index])
-        plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
-        print ("y = " + str(test_set_y[0,index]) + ", you predicted that it is a \"" + classes[int(Y_prediction_test[0,index])].decode("utf-8") +  "\" picture.")
-        plt.show()
-        example_test(num_px)
-    except:
-        print("Try Again")
-        example_test(num_px)
-if override == 0:
-    if dataset_option == "X":
-        num_px = train_set_x_orig.shape[1]
-        example_test(num_px)
+
 
 
 end_time = time.time()
