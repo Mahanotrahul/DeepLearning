@@ -513,8 +513,6 @@ if override == False:
         ni = int(ni)
         if ni <= 0:
             raise NotPositiveError
-        if ni < 100 and ni > 0:
-            raise SmallNumberError
     except ValueError:
         print("Input is not an integer number.\n")
         ni = ni_default
@@ -564,7 +562,7 @@ print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - Y)
 
 def example_X(num_px):
     try:
-        # Example of a picture that was wrongly classified.
+        # Example of a picture
         index = int(input("Index of Picture: "))
         print(Y_prediction_test[0,index])
         plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
@@ -576,7 +574,7 @@ def example_X(num_px):
 
 def example_S():
     sel = np.random.randint(1, X_test.shape[1])
-    plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
+    plt.imshow(test_set_x[:,sel].reshape((num_px, num_px, 3)))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
     plt.show()
 
