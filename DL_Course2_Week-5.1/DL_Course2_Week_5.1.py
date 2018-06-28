@@ -95,6 +95,16 @@ if override == 0:
         Y_test = test_set_y
         print(Y_test)
 
+        # Normalize Inputs
+        # Normailze Mean
+        X -= np.mean(X)
+        X_test -= np.mean(X_test)
+
+        # Normalize Variance
+        X /= np.var(X)
+        X_test /= np.var(X_test)
+
+        # One Hot Encoding
         dict = {'Y' : Y, 
                 'Y_test' : Y_test}
         dict = one_hot_encoding(dict)
