@@ -601,7 +601,7 @@ if override == 0:
         print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
         num_px = train_set_x_orig.shape[1]
         example_X(num_px)
-    elif dataset_option == "N":
+    elif dataset_option == "S":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         example_S()
