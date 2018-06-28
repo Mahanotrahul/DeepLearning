@@ -59,3 +59,19 @@ def tanh_backward(dA, Z):
 
     return dZ
 
+def one_hot_encoding(dict):
+    #print(np.amax(Y))
+    dictt = {}
+    for i in dict:
+        Y = dict[i]
+        new_rows = np.zeros((np.amax(Y), Y.shape[1]))
+        Y = np.vstack([Y, new_rows])
+
+        for col in range(Y.shape[1]):
+            value = int(Y[0,col])
+            Y[0,col] = 0
+            Y[value,col] = 1
+        
+        dictt[str(i)] = Y
+        del Y
+    return dictt

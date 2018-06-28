@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import sklearn
 import sklearn.datasets
 import sklearn.linear_model
-from planar_utils import plot_decision_boundary, load_planar_dataset, load_extra_datasets, load_dataset
+from planar_utils import plot_decision_boundary, load_planar_dataset, load_extra_datasets, load_dataset, load_dataset_SIGNS
 import scipy.io as sio
 import testCases_v4 as testCases
-from functions import sigmoid, relu, sigmoid_backward, relu_backward, tanh_backward
+from functions import sigmoid, relu, sigmoid_backward, relu_backward, tanh_backward, one_hot_encoding
 
 #import mnist
 
@@ -48,7 +48,7 @@ if override == 0:
                       "D": "blobs",
                       "C": "gaussian_quantiles"}
 
-    dataset_option = input("Which Dataset you want to run the NN Model?\nA: noisy_circles\nB:noisy_moons\nC:Gausssian_Quantiles\nD: Blobs\nX: Image-Classification\nN: Hand-Written Digit Classification\t")
+    dataset_option = input("Which Dataset you want to run the NN Model?\nA: noisy_circles\nB:noisy_moons\nC:Gausssian_Quantiles\nD: Blobs\nX: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\t")
     if any(dataset_option in string for string in dataset_string):
         print("Dataset Choosen : %s" %dataset_string[dataset_option])
         dataset = dataset_option
@@ -73,8 +73,41 @@ if override == 0:
         X_test = test_set_x/255
         Y_test = test_set_y
 
+
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
+        print("Y_test.shape : " + str(Y_test.shape))
+        print("X_test.shape : " + str(X_test.shape))
+
+
+    elif dataset_option == "S":
+        train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = load_dataset_SIGNS()
+        train_set_x = train_set_x_orig.reshape(train_set_x_orig.shape[0],-1).T
+        print(train_set_x.shape)
+        print(test_set_x_orig.shape)
+        test_set_x = test_set_x_orig.reshape(test_set_x_orig.shape[0],-1).T
+        print(test_set_x.shape)
+        num_px = train_set_x_orig.shape[1]
+        
+        X = train_set_x/255
+        Y = train_set_y
+        X_test = test_set_x/255
+        Y_test = test_set_y
+        print(Y_test)
+
+        dict = {'Y' : Y, 
+                'Y_test' : Y_test}
+        dict = one_hot_encoding(dict)
+        Y = dict['Y']
+        Y_test= dict["Y_test"]
+        del dict
+        print(Y)
+
+        print("Y.shape : " + str(Y.shape))
+        print("X.shape : " + str(X.shape))
+        print("Y_test.shape : " + str(Y_test.shape))
+        print("X_test.shape : " + str(X_test.shape))
+
 
     elif dataset_option == "N":
 
@@ -157,7 +190,7 @@ else:
 if override == 0:
     if dataset_option == "X":
         try:
-            index = int(input("Index of the picture( 0 - 209) ? "))
+            index = int(input("Index of the picture( 0 -  %i )  ? " %X.shape[1]))
             print("Selected Index Number : %i" %index)
             print(str(train_set_y[:,index]) + "It's a " + classes[np.squeeze(train_set_y[:,index])].decode("utf-8") + " picture. ")
             plt.imshow(train_set_x_orig[index])
@@ -165,7 +198,17 @@ if override == 0:
 
         except Exception as e:
             print(e)
-        
+    
+    elif dataset_option == "S":
+        try:
+            index = int(input("Index of the picture( 0 -  %i )  ? " %X.shape[1]))
+            print("Selected Index Number : %i" %index)
+            plt.imshow(train_set_x_orig[index])
+            plt.title("Number: " + str(np.argmax(Y[:,index])))
+            plt.xlabel(Y[:,index])
+            plt.show()
+        except Exception as e:
+            print(e)
         
     elif dataset_option == "N":
         sel = np.random.randint(1, X.shape[1])
@@ -332,7 +375,7 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, activation_func = "sigmoid",
 
         if(i%100 == 0 and override == 0):
             costs.append(cost)
-        if(i%100 == 0 and print_cost):
+        if(print_cost):
             print("Cost after Iteration %i : %f" %(i,cost))
 
     return parameters, costs
@@ -521,6 +564,21 @@ def example_X(num_px):
     except:
         return
 
+def example_S():
+    sel = np.random.randint(1, X_test.shape[1])
+    plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
+    plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
+    plt.show()
+
+    try:
+        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+    except:
+        example_number
+    if input1 == "1":
+        example_S()
+    else:
+        return
+
 def example_number(Y_prediction_test):
     sel = np.random.randint(1, X_test.shape[1])
     plt.imshow(X_test[:,sel].reshape(28, 28))
@@ -546,6 +604,10 @@ if override == 0:
     elif dataset_option == "N":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        example_S()
+    elif dataset_option == "N":
+        Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         example_number(Y_prediction_test)
     else:
         #plot the decision boundary
@@ -567,4 +629,3 @@ if override == 0:
 end_time = time.time()
 print("Execution Time : " + str(end_time - start_time) + " sec")
 print("Training Time : " + str(end_training_time - start_training_time) + " sec")
-
