@@ -298,17 +298,6 @@ def initialize_parameters(layer_dims):
 
     return parameters
 
-def initialize_adam(parameters):
-    L = len(parameters)//2
-    v = {}
-    s = {}
-    for l in range(1, L + 1):
-        v["dW" + str(l)] = np.zeros((parameters["W" + str(l)].shape[0], parameters["W" + str(l)].shape[1]))
-        v["db" + str(l)] = np.zeros((parameters["b" + str(l)].shape[0], parameters["b" + str(l)].shape[1]))
-        s["dW" + str(l)] = np.zeros((parameters["W" + str(l)].shape[0], parameters["W" + str(l)].shape[1]))
-        s["db" + str(l)] = np.zeros((parameters["b" + str(l)].shape[0], parameters["b" + str(l)].shape[1]))
-    return v, s
-
 
 def forward_prop(X, parameters, activation_func, Keep_prob):
     cache= {}
@@ -343,6 +332,7 @@ def forward_prop(X, parameters, activation_func, Keep_prob):
     ##  but in the present way, there's no need of another for-loop
 
     return cache, activations
+
 
 def L2_cost(parameters, lambd, m):
     L = len(parameters)//2
@@ -393,30 +383,12 @@ def back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob):
     return grads
 
 
-def update_parameters(grads, learning_rate, parameters, v, s, t):
+def update_parameters(grads, learning_rate, parameters):
     L = len(parameters)//2
-    v_corrected = {}
-    s_corrected = {}
-    beta1 = 0.9
-    beta2 = 0.999
-    epsilon = 1e-8
 
     for l in range(1, L + 1):
-        v["dW" + str(l)] = beta1*v["dW" + str(l)] + ((1 - beta1)*(grads["dW" + str(l)]))
-        v["db" + str(l)] = beta1*v["db" + str(l)] + ((1 - beta1)*(grads["db" + str(l)]))
-
-        v_corrected["dW"+ str(l)] = v["dW" + str(l)] / (1 - np.power(beta1,t))
-        v_corrected["db"+ str(l)] = v["db" + str(l)] / (1 - np.power(beta1,t))
-
-
-        s["dW" + str(l)] = beta2*s["dW" + str(l)] + ((1 - beta2)*(grads["dW" + str(l)]))
-        s["db" + str(l)] = beta2*s["db" + str(l)] + ((1 - beta2)*(grads["db" + str(l)]))
-
-        s_corrected["dW"+ str(l)] = s["dW" + str(l)] / (1 - np.power(beta2,t))
-        s_corrected["db"+ str(l)] = s["db" + str(l)] / (1 - np.power(beta2,t))
-
-        parameters["W" + str(l)] = parameters["W" + str(l)] - learning_rate*(v_corrected["dW" + str(l)] / np.sqrt(s_corrected["dW" + str(l)] + epsilon))
-        parameters["b" + str(l)] = parameters["b" + str(l)] - learning_rate*(v_corrected["db" + str(l)] / np.sqrt(s_corrected["db" + str(l)] + epsilon))
+        parameters["W" + str(l)] = parameters["W" + str(l)] - learning_rate*grads["dW" + str(l)]
+        parameters["b" + str(l)] = parameters["b" + str(l)] - learning_rate*grads["db" + str(l)]
 
     return parameters
 
@@ -434,9 +406,7 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, activation_func = "sigmoid",
 
     costs = []
 
-
     parameters = initialize_parameters(layer_dims)
-    v, s = initialize_adam(parameters)
 
     for i in range(num_iterations):
         cache, activations = forward_prop(X, parameters, activation_func, Keep_prob)
@@ -445,7 +415,7 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, activation_func = "sigmoid",
 
         grads = back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob)
 
-        parameters = update_parameters(grads, learning_rate, parameters, v, s, t = i + 1)
+        parameters = update_parameters(grads, learning_rate, parameters)
 
 
         if(i%100 == 0 and override == 0):
@@ -652,7 +622,7 @@ def example_S():
     try:
         input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
     except:
-        example_S()
+        example_number
     if input1 == "1":
         example_S()
     else:
