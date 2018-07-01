@@ -48,7 +48,7 @@ if override == 0:
                       "D": "blobs",
                       "C": "gaussian_quantiles"}
 
-    dataset_option = input("Which Dataset you want to run the NN Model?\nA: noisy_circles\nB:noisy_moons\nC:Gausssian_Quantiles\nD: Blobs\nX: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\t")
+    dataset_option = input("Which Dataset you want to run the NN Model?\nA: noisy_circles\nB:noisy_moons\nC:Gausssian_Quantiles\nD: Blobs\nX: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\nNb : Hand-Written Digits BigDatset [MNIST Datset]\t")
     if any(dataset_option in string for string in dataset_string):
         print("Dataset Choosen : %s" %dataset_string[dataset_option])
         dataset = dataset_option
@@ -97,12 +97,12 @@ if override == 0:
 
         # Normalize Inputs
         # Normailze Mean
-        X -= np.mean(X)
-        X_test -= np.mean(X_test)
+        X -= np.mean(X , axis = 0)
+        X_test -= np.mean(X_test, axis = 0)
 
         # Normalize Variance
-        X /= np.var(X)
-        X_test /= np.var(X_test)
+        X /= np.var(X, axis = 0)
+        X_test /= np.var(X_test, axis = 0)
 
         # One Hot Encoding
         dict = {'Y' : Y, 
@@ -121,11 +121,11 @@ if override == 0:
 
     elif dataset_option == "N":
 
-        test = sio.loadmat('datasets/Digit_Classification-BigDataset.mat')
-        X = test['X'][:]
-        Y = test['Y'][:]
-        X_test = test['X_test'][:]
-        Y_test = test['Y_test'][:]
+        #test = sio.loadmat('datasets/Digit_Classification-BigDataset.mat')
+        #X = test['X'][:]
+        #Y = test['Y'][:]
+        #X_test = test['X_test'][:]
+        #Y_test = test['Y_test'][:]
 
         #from tensorflow.examples.tutorials.mnist import input_data
         #mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
@@ -145,21 +145,23 @@ if override == 0:
         #del mnist
 
 
-        #test = sio.loadmat('datasets/Digit_Classification.mat')
-        #X = test['X'][:]
-        #Y = test['Y'][:]
+        test = sio.loadmat('datasets/Digit_Classification.mat')
+        X = test['X'][:]
+        Y = test['Y'][:]
 
-        ##X, Y = X.T, Y.T
-        #sel = np.arange(X.shape[1])
-        #np.random.shuffle(sel)
-        #print(sel)
-        #print(sel.shape)
-        #set_divide = (90*X.shape[1])//100
-        #X_train = X[:,sel[0:set_divide]]
-        #X_test = X[:,sel[set_divide:X.shape[1]]]
-        #X = X_train
-        #print(X.shape)
-        #print(X_test.shape)
+        #X, Y = X.T, Y.T
+        sel = np.arange(X.shape[1])
+        np.random.shuffle(sel)
+        print(sel)
+        print(sel.shape)
+        set_divide = (90*X.shape[1])//100
+        X_train = X[:,sel[0:set_divide]]
+        X_test = X[:,sel[set_divide:X.shape[1]]]
+        X = X_train
+
+
+
+
         ##for i in range(Y.shape[1]):
         ##    if Y[:,i] == 10:
         ##        Y[:,i] = 0
@@ -174,12 +176,38 @@ if override == 0:
         ##    Y[0,i] = 0
         ##    Y[np.argmax(Y[:,i]), i] = 1
         ##sio.savemat("datasets/Digit_Classification.mat", {"X": X, "Y": Y})
-        #Y_train = Y[:,sel[0:set_divide]]
-        #Y_test = Y[:,sel[set_divide:Y.shape[1]]]
-        #Y = Y_train
-        #print(Y.shape)
-        #print(Y_test.shape)
 
+
+
+        Y_train = Y[:,sel[0:set_divide]]
+        Y_test = Y[:,sel[set_divide:Y.shape[1]]]
+        Y = Y_train
+        print("Y.shape : " + str(Y.shape))
+        print("X.shape : " + str(X.shape))
+        print("Y_test.shape : " + str(Y_test.shape))
+        print("X_test.shape : " + str(X_test.shape))
+
+    elif dataset_option == "Nb":
+
+        test = sio.loadmat('C:\\Users\\user\\source\\repos\\datasets\\Digit_Classification-BigDataset.mat')
+        X = test['X'][:]
+        Y = test['Y'][:]
+        X_test = test['X_test'][:]
+        Y_test = test['Y_test'][:]
+
+        # Normalize Inputs
+        # Normailze Mean
+        X -= np.mean(X , axis = 0)
+        X_test -= np.mean(X_test, axis = 0)
+
+        # Normalize Variance
+        X /= np.var(X, axis = 0)
+        X_test /= np.var(X_test, axis = 0)
+
+        print("Y.shape : " + str(Y.shape))
+        print("X.shape : " + str(X.shape))
+        print("Y_test.shape : " + str(Y_test.shape))
+        print("X_test.shape : " + str(X_test.shape))
 
     else:
         print("Wrong Argument. Using Default dataset gaussian_quantiles")
@@ -222,6 +250,13 @@ if override == 0:
         
     elif dataset_option == "N":
         sel = np.random.randint(1, X.shape[1])
+        plt.imshow(X[:,sel].reshape(20, 20), cmap = 'gray_r')
+        plt.title("Number: " + str(np.argmax(Y[:,sel])))
+        plt.xlabel(Y[:,sel])
+        plt.show()
+    
+    elif dataset_option == "Nb":
+        sel = np.random.randint(1, X.shape[1])
         plt.imshow(X[:,sel].reshape(28, 28), cmap = 'gray_r')
         plt.title("Number: " + str(np.argmax(Y[:,sel])))
         plt.xlabel(Y[:,sel])
@@ -254,12 +289,11 @@ def layer_sizes(X, Y):
     return n_x, n_y
 
 def initialize_parameters(layer_dims):
-    np.random.seed(3)
 
     parameters = {}
     L = len(layer_dims)
     for l in range(1, L):
-        parameters["W" + str(l)] = (np.random.randn(layer_dims[l], layer_dims[l - 1])) * (np.sqrt(2/layer_dims[l-1]))   #*0.01 #He Initialization
+        parameters["W" + str(l)] = (np.random.randn(layer_dims[l], layer_dims[l - 1]))  * 0.01   #*0.01 #He Initialization
         parameters["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
     return parameters
@@ -326,7 +360,7 @@ def back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob):
     AL = activations["A" + str(L)]
 
     grads["dA" + str(L)] =  - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))     # Initializing the backpropagation
-    grads["dZ" + str(L)] = sigmoid_backward(grads["dA" + str(L)], cache["Z" + str(L)])
+    grads["dZ" + str(L)] = AL - Y
 
     
 
@@ -391,6 +425,8 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, activation_func = "sigmoid",
     return parameters, costs
 
 def predict(parameters, X, activation_func):
+    global Keep_prob
+    Keep_prob = 1
     _, activations = forward_prop(X, parameters, activation_func, Keep_prob = 1)
  
     AL = activations["A" + str(len(parameters)//2)]
@@ -403,6 +439,10 @@ def predict(parameters, X, activation_func):
             AL[z[i],i] = 1
         else:
             AL[:,i] = 0
+    print(AL)
+    #for i in range(AL.shape[1]):
+    #    AL[:,i] = 0
+    #    AL[z[i],i] = 1
     return AL
 
 
@@ -538,8 +578,8 @@ print("Number of Hidden Layers : " + str(n_L))
 print("Layer Dimensions : " + str(layer_dims))
 print("Learning Rate : " + str(lr))
 print("Number of Iterations : " + str(ni))
-print("Regularization Parameter (lambda) : %.2f" %lambd)
-print("Dropout Parameter (Keep_prob) : %.2f" %Keep_prob)
+print("Regularization Parameter (lambda) : " +  str(lambd))
+print("Dropout Parameter (Keep_prob) : " + str(Keep_prob))
 
 
 
@@ -589,7 +629,7 @@ def example_S():
 
 def example_number(Y_prediction_test):
     sel = np.random.randint(1, X_test.shape[1])
-    plt.imshow(X_test[:,sel].reshape(28, 28))
+    plt.imshow(X_test[:,sel].reshape(20, 20))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
     plt.show()
 
@@ -599,6 +639,21 @@ def example_number(Y_prediction_test):
         example_number
     if input1 == "1":
         example_number(Y_prediction_test)
+    else:
+        return
+
+def example_Nb():
+    sel = np.random.randint(1, X_test.shape[1])
+    plt.imshow(X_test[:,sel].reshape(28, 28))
+    plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
+    plt.show()
+
+    try:
+        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+    except:
+        return
+    if input1 == "1":
+        example_Nb()
     else:
         return
 
@@ -617,6 +672,10 @@ if override == 0:
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         example_number(Y_prediction_test)
+    elif dataset_option == "Nb":
+        Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        example_Nb()
     else:
         #plot the decision boundary
         plot_decision_boundary(lambda x: predict(learned_parameters, x.T, activation_func =  activation_func), X, Y)
