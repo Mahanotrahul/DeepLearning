@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<ProfilingTarget xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectTarget>
+    <TargetProject>b6109ea1-9fa2-4505-a9b6-22254aacded8</TargetProject>
+    <FriendlyName>DL_Course1_Week-4</FriendlyName>
+  </ProjectTarget>
+</ProfilingTarget>
