@@ -176,33 +176,11 @@ if override == 0:
         ##    Y[0,i] = 0
         ##    Y[np.argmax(Y[:,i]), i] = 1
         ##sio.savemat("datasets/Digit_Classification.mat", {"X": X, "Y": Y})
-
-
-
-        Y_train = Y[:,sel[0:set_divide]]
-        Y_test = Y[:,sel[set_divide:Y.shape[1]]]
-        Y = Y_train
-        print("Y.shape : " + str(Y.shape))
-        print("X.shape : " + str(X.shape))
-        print("Y_test.shape : " + str(Y_test.shape))
-        print("X_test.shape : " + str(X_test.shape))
-
-    elif dataset_option == "Nb":
-
-        test = sio.loadmat('C:\\Users\\user\\source\\repos\\datasets\\Digit_Classification-BigDataset.mat')
-        X = test['X'][:]
-        Y = test['Y'][:]
-        X_test = test['X_test'][:]
-        Y_test = test['Y_test'][:]
-
-        # Normalize Inputs
-        # Normailze Mean
-        X -= np.mean(X , axis = 0)
-        X_test -= np.mean(X_test, axis = 0)
-
-        # Normalize Variance
-        X /= np.var(X, axis = 0)
-        X_test /= np.var(X_test, axis = 0)
+        #Y_train = Y[:,sel[0:set_divide]]
+        #Y_test = Y[:,sel[set_divide:Y.shape[1]]]
+        #Y = Y_train
+        #print(Y.shape)
+        #print(Y_test.shape)
 
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
@@ -332,6 +310,7 @@ def forward_prop(X, parameters, activation_func, Keep_prob):
     ##  but in the present way, there's no need of another for-loop
 
     return cache, activations
+
 
 def L2_cost(parameters, lambd, m):
     L = len(parameters)//2
@@ -629,7 +608,7 @@ def example_S():
 
 def example_number(Y_prediction_test):
     sel = np.random.randint(1, X_test.shape[1])
-    plt.imshow(X_test[:,sel].reshape(20, 20))
+    plt.imshow(X_test[:,sel].reshape(28, 28))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
     plt.show()
 
@@ -638,7 +617,7 @@ def example_number(Y_prediction_test):
     except:
         example_number
     if input1 == "1":
-        example_number(Y_prediction_test)
+        example_number()
     else:
         return
 
