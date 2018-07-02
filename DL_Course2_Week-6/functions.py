@@ -114,13 +114,13 @@ def normalize(X , X_test):
     X_test -= np.mean(X_test, axis = 0)
 
     # Normalize Variance
-    X /= np.var(X, axis = 0)
-    X_test /= np.var(X_test, axis = 0)
+    X /= np.var(X, axis = 0)**2
+    X_test /= np.var(X_test, axis = 0)**2
 
     X -= np.mean(X)
     X_test -= np.mean(X)
         
-    X /= np.var(X)
-    X_test /= np.var(X)
+    X /= np.var(X)**2
+    X_test /= np.var(X)**2
 
     return X, X_test
