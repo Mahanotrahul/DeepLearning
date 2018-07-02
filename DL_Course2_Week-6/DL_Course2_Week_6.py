@@ -74,6 +74,14 @@ if override == 0:
         X_test = test_set_x/255
         Y_test = test_set_y
 
+        print(Y_test)
+        print("Y_test.shape : " + str(Y_test.shape))
+        print("X_test.shape : " + str(X_test.shape))
+        dict = one_hot_encoding(dict = {"Y" : Y, "Y_test" : Y_test})
+        Y = dict["Y"]
+        Y_test = dict["Y_test"]
+        print(Y_test)
+
 
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
@@ -279,7 +287,7 @@ def initialize_parameters(layer_dims):
     parameters = {}
     L = len(layer_dims)
     for l in range(1, L):
-        parameters["W" + str(l)] = (np.random.randn(layer_dims[l], layer_dims[l - 1]))  * np.sqrt(1./layer_dims[l - 1])   #*0.01 #He Initialization
+        parameters["W" + str(l)] = (np.random.randn(layer_dims[l], layer_dims[l - 1]))  * np.sqrt(2./layer_dims[l - 1])   #*0.01 #He Initialization
         parameters["b" + str(l)] = np.zeros((layer_dims[l], 1))
 
     return parameters
@@ -333,15 +341,19 @@ def forward_prop(X, parameters, activation_func, Keep_prob):
         else:
             print("Error. Invalid Activation Function.")
         
-        # Dropout Regularization
-        cache["d" + str(l)] = np.random.rand(activations["A" + str(l)].shape[0], activations["A" + str(l)].shape[1])
-        cache["d" + str(l)] = cache["d" + str(l)] < Keep_prob
-        activations["A" + str(l)] = np.multiply(activations["A" + str(l)], cache["d" + str(l)])
-        activations["A" + str(l)] /= Keep_prob
+        ## Dropout Regularization
+        #cache["d" + str(l)] = np.random.rand(activations["A" + str(l)].shape[0], activations["A" + str(l)].shape[1])
+        #cache["d" + str(l)] = cache["d" + str(l)] < Keep_prob
+        #activations["A" + str(l)] = np.multiply(activations["A" + str(l)], cache["d" + str(l)])
+        #activations["A" + str(l)] /= Keep_prob
         
 
     cache["Z" + str(L)] = np.dot(parameters["W" + str(L)], activations["A" + str(L - 1)]) + parameters["b" + str(L)]
-    activations["A" + str(L)] = sigmoid(cache["Z" + str(L)])
+    #activations["A" + str(L)] = sigmoid(cache["Z" + str(L)])
+
+    # Softmax Classifier Activation
+    t = np.exp(cache["Z" + str(L)])
+    activations["A" + str(L)] = t/(np.sum(t))
 
     
     
@@ -351,20 +363,23 @@ def forward_prop(X, parameters, activation_func, Keep_prob):
     return cache, activations
 
 
-def L2_cost(parameters, lambd, m):
+def L2_reg_cost(parameters, lambd, m):
     L = len(parameters)//2
-    cost = 0
+    L2_cost = 0
     for l in range(1,L + 1):
-        cost = np.sum(np.square(parameters["W" + str(l)])) + cost
+        L2_cost = np.sum(parameters["W" + str(l)]**2) + L2_cost
 
-    cost = (lambd/(2*m))*cost
-    return cost
+    L2_cost = (lambd/(2*m))*L2_cost
+    return L2_cost
 
 def compute_cost(AL, Y, parameters, lambd):
     m = Y.shape[1]
-    cost = (-np.sum(np.multiply(Y, np.log(AL)) + np.multiply(1 - Y,np.log(1 - AL)))/m)
+    #cost = (-np.sum(np.multiply(Y, np.log(AL)) + np.multiply(1 - Y,np.log(1 - AL)))/m)
+    
+    # Softmax Loss Function
+    cost = -(np.sum(np.multiply(Y, np.log(AL))))
     if(lambd != 0):
-        cost = cost + L2_cost(parameters, lambd, m)
+        cost = cost + L2_reg_cost(parameters, lambd, m)
     cost = np.squeeze(cost)         # makes sure cost is the dimension we expect. E.g., turns [[17]] into 17 
 
     return cost
@@ -393,14 +408,16 @@ def back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob):
                 grads["dZ" + str(l - 1)] = relu_backward(grads["dA" + str(l - 1)], cache["Z" + str(l - 1)])
             elif(activation_func == "tanh"):
                 grads["dZ" + str(l - 1)] = tanh_backward(grads["dA" + str(l - 1)], cache["Z" + str(l - 1)])
-        
-            grads["dA" + str(l - 1)] = np.multiply(grads["dA" + str(l - 1)], cache["d" + str(l - 1)])
-            grads["dA" + str(l - 1)] /= Keep_prob
+            
+            #Dropout
+            #grads["dA" + str(l - 1)] = np.multiply(grads["dA" + str(l - 1)], cache["d" + str(l - 1)])
+            
+            #grads["dA" + str(l - 1)] /= Keep_prob
 
     return grads
 
 
-def update_parameters(grads, learning_rate, parameters, beta1 = 0.9):
+def update_parameters(grads, learning_rate, parameters):
     L = len(parameters)//2
 
     for l in range(1, L + 1):
@@ -497,7 +514,7 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activat
 
             grads = back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob)
 
-
+            #parameters = update_parameters(grads, learning_rate, parameters)
             if(optimizer == "momentum"):
                 parameters = update_parameters_momentum(grads, learning_rate, parameters, v, beta1)
             elif(optimizer == "rmsprop"):
@@ -508,7 +525,7 @@ def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activat
             else:
                 print("Invalid Optimizer Algorithm")
 
-        learning_rate /=  (1 + 0.000009*i)
+        #learning_rate /=  (1 + i)
         if(learning_rate == 0):
             break
 
@@ -756,21 +773,28 @@ print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - Y)
 #print ('Training Accuracy: %d' % float((np.dot(Y,Y_prediction_train.T) + np.dot(1-Y,1-Y_prediction_train.T))/float(Y.size)*100) + '%')
 
 
-def example_X(num_px):
+def example_X():
     try:
         # Example of a picture
-        index = int(input("Index of Picture: "))
-        print(Y_prediction_test[0,index])
-        plt.imshow(test_set_x[:,index].reshape((num_px, num_px, 3)))
-        print ("y = " + str(test_set_y[0,index]) + ", you predicted that it is a \"" + classes[int(Y_prediction_test[0,index])].decode("utf-8") +  "\" picture.")
+        sel = np.random.randint(1, X_test.shape[1])
+        plt.imshow(X_test[:,sel].reshape((num_px, num_px, 3)))
+        plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
         plt.show()
-        example_X(num_px)
+
+        try:
+            input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+        except:
+            return
+        if input1 == "1":
+            example_X()
+        else:
+            return
     except:
         return
 
 def example_S():
     sel = np.random.randint(1, X_test.shape[1])
-    plt.imshow(test_set_x[:,sel].reshape((num_px, num_px, 3)))
+    plt.imshow(X_test[:,sel].reshape((num_px, num_px, 3)))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
     plt.show()
 
@@ -783,7 +807,7 @@ def example_S():
     else:
         return
 
-def example_number():
+def example_N():
     sel = np.random.randint(1, X_test.shape[1])
     plt.imshow(X_test[:,sel].reshape(20, 20))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
@@ -794,7 +818,7 @@ def example_number():
     except:
         return
     if input1 == "1":
-        example_number()
+        example_N()
     else:
         return
 
@@ -817,9 +841,9 @@ if override == 0:
     if dataset_option == "X":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
+        #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
         num_px = train_set_x_orig.shape[1]
-        example_X(num_px)
+        example_X()
     elif dataset_option == "S":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
@@ -827,7 +851,7 @@ if override == 0:
     elif dataset_option == "N":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        example_number()
+        example_N()
     elif dataset_option == "Nb":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
