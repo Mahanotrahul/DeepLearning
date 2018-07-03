@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import ops
 import matplotlib.pyplot as plt
+import scipy.io as sio
 from planar_utils import plot_decision_boundary, load_planar_dataset, load_extra_datasets, load_dataset, load_dataset_SIGNS
 from functions import sigmoid, relu, sigmoid_backward, relu_backward, tanh_backward, one_hot_encoding, random_mini_batches, normalize
 
@@ -122,7 +123,7 @@ if override == 0:
         #del mnist
 
 
-        test = sio.loadmat('..\\..\\..\\..\\datasets\\Digit_Classification.mat')
+        test = sio.loadmat('..\\..\\..\\..\\..\\datasets\\Digit_Classification.mat')
         X = test['X'][:]
         Y = test['Y'][:]
 
@@ -165,7 +166,6 @@ if override == 0:
         print("X_test.shape : " + str(X_test.shape))
     
     elif dataset_option == "Nb":
-        import scipy.io as sio
         test = sio.loadmat('..\\..\\..\\..\\..\\datasets\\Digit_Classification-BigDataset.mat')
         X = test['X'][:]
         Y = test['Y'][:]
@@ -467,11 +467,16 @@ def predict(parameters, X, activation_func):
 
     x = tf.placeholder(dtype = tf.float32, shape = (X.shape[0], X.shape[1]))
 
-    ZL = forward_prop(X, parameters, activation_func)
-    p = tf.argmax(ZL)
-
+    ZL = forward_prop(x, parameters, activation_func)
     sess = tf.Session()
-    predictions = sess.run(p, feed_dict = {x: X})
+    
+
+    predictions = sess.run(ZL, feed_dict = {x: X})
+    predictions = np.exp(predictions)/np.sum(np.exp(predictions))
+    z = np.argmax(predictions, axis=0)
+    for i in range(ZL.shape[1]):
+        predictions[:,i] = 0
+        predictions[z[i],i] = 1
  
     return predictions
  
@@ -601,10 +606,10 @@ if override == False:
         print("Input is not an integer.\n")
         num_epoch = num_epoch_default
     except SmallNumberError:
-        print("Number is too small. Using default Value %i for Number of Iterations" %num_epoch_default)
+        print("Number is too small. Using default Value %f for Number of Iterations" %num_epoch_default)
         num_epoch = num_epoch_default
     except NotPositiveError:
-        print("The number is not positive, Using the default Value %i as Number of Iterations." %num_epoch_default)
+        print("The number is not positive, Using the default Value %f as Number of Iterations." %num_epoch_default)
         num_epoch = num_epoch_default
 
     try:
@@ -615,10 +620,10 @@ if override == False:
         print("Input is not an integer. \n")
         mini_batch_size = mini_batch_size_default
     except SmallNumberError:
-        print("Number is too small. Using default Value %i for Number of Iterations" %mini_batch_size_default)
+        print("Number is too small. Using default Value %f for Number of Iterations" %mini_batch_size_default)
         mini_batch_size = mini_batch_size_default
     except NotPositiveError:
-        print("The number is not positive, Using the default Value %i as Number of Iterations." %mini_batch_size_default)
+        print("The number is not positive, Using the default Value %f as Number of Iterations." %mini_batch_size_default)
         mini_batch_size = mini_batch_size_default
 
 
@@ -627,24 +632,24 @@ if override == False:
         beta1 = float(beta1)
         if beta1 < 0:
             raise NotPositiveError
-    except ValueError:
-      print("%s is not an integer.\n" %beta1)
-      beta1 = beta1_default
     except NotPositiveError:
-      print("The number is negative, Using the default Value %i as the Number of Hidden Layers." %beta1_default)
-      beta1 = beta1_defaultbeta1 = input("Beta1 parameter? \t")
+      print("The number is negative, Using the default Value %f as the Number of Hidden Layers." %beta1_default)
+      beta1 = beta1_default
+    except:
+        print("Invalid Input. Using the default Value Beta1 : %f" %beta1_default)
+        beta1 = beta1_default
 
     beta2 = input("Beta2 parameter? \t")
     try:
         beta2 = float(beta2)
         if beta2 < 0:
             raise NotPositiveError
-    except ValueError:
-      print("%s is not an integer.\n" %beta2)
-      beta2 = beta2_default
     except NotPositiveError:
-      print("The number is negative, Using the default Value %i as the Number of Hidden Layers." %beta2_default)
+      print("The number is negative, Using the default Value %f as the Number of Hidden Layers." %beta2_default)
       beta2 = beta2_default
+    except:
+        print("Invalid Input. Using the default Value Beta2 : %f" %beta2_default)
+        beta2 = beta2_default
 
 else:
     n_L = n_L_default
@@ -735,6 +740,7 @@ def example_N():
         return
 
 def example_Nb():
+    print(X_test.shape)
     sel = np.random.randint(1, X_test.shape[1])
     plt.imshow(X_test[:,sel].reshape(28, 28))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
@@ -762,10 +768,15 @@ if override == 0:
         example_S()
     elif dataset_option == "N":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        print(Y_test.shape)
+        print(Y_prediction_test.shape)
+        print(Y_prediction_test)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         example_N()
     elif dataset_option == "Nb":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        print(Y_test.shape)
+        print(Y_prediction_test.shape)
         print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
         example_Nb()
     else:
