@@ -5,9 +5,12 @@ start_time = time.time()
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.framework import ops
 import matplotlib.pyplot as plt
+import sklearn
+import sklearn.datasets
+import sklearn.linear_model
 from planar_utils import plot_decision_boundary, load_planar_dataset, load_extra_datasets, load_dataset, load_dataset_SIGNS
+import scipy.io as sio
 from functions import sigmoid, relu, sigmoid_backward, relu_backward, tanh_backward, one_hot_encoding, random_mini_batches, normalize
 
 #import mnist
@@ -34,10 +37,30 @@ if override == True:
     print("Over Riding all input requirements with default values")
 
 # Datasets
+noisy_circles, noisy_moons, blobs, gaussian_quantiles, no_structure = load_extra_datasets()
 if override == 0:
+    datasets = {"A": noisy_circles,
+                "B": noisy_moons,
+                "D": blobs,
+                "C": gaussian_quantiles}
 
-    dataset_option = input("Which Dataset you want to run the NN Model?X: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\nNb : Hand-Written Digits BigDatset [MNIST Datset]\t")
-    if dataset_option == "X":
+    dataset_string = {"A": "noisy_circles",
+                      "B": "noisy_moons",
+                      "D": "blobs",
+                      "C": "gaussian_quantiles"}
+
+    dataset_option = input("Which Dataset you want to run the NN Model?\nA: noisy_circles\nB:noisy_moons\nC:Gausssian_Quantiles\nD: Blobs\nX: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\nNb : Hand-Written Digits BigDatset [MNIST Datset]\t")
+    if any(dataset_option in string for string in dataset_string):
+        print("Dataset Choosen : %s" %dataset_string[dataset_option])
+        dataset = dataset_option
+        X, Y = datasets[dataset]
+        X, Y = X.T, Y.reshape(1, Y.shape[0])
+        print(X.shape)
+        print(Y.shape)
+        # make blobs binary
+        if dataset == "D":
+            Y = Y%2
+    elif dataset_option == "X":
         train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = load_dataset()
         train_set_x = train_set_x_orig.reshape(train_set_x_orig.shape[0],-1).T
         print(train_set_x.shape)
@@ -81,6 +104,8 @@ if override == 0:
         Y_test = test_set_y
         print(Y_test)
 
+        X, X_test = normalize(X, X_test)
+
         # One Hot Encoding
         dict = {'Y' : Y, 
                 'Y_test' : Y_test}
@@ -122,7 +147,7 @@ if override == 0:
         #del mnist
 
 
-        test = sio.loadmat('..\\..\\..\\..\\datasets\\Digit_Classification.mat')
+        test = sio.loadmat('datasets/Digit_Classification.mat')
         X = test['X'][:]
         Y = test['Y'][:]
 
@@ -165,13 +190,13 @@ if override == 0:
         print("X_test.shape : " + str(X_test.shape))
     
     elif dataset_option == "Nb":
-        import scipy.io as sio
         test = sio.loadmat('..\\..\\..\\..\\..\\datasets\\Digit_Classification-BigDataset.mat')
         X = test['X'][:]
         Y = test['Y'][:]
         X_test = test['X_test'][:]
         Y_test = test['Y_test'][:]
 
+        X, X_test = normalize(X, X_test)
 
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
@@ -180,39 +205,14 @@ if override == 0:
 
     else:
         print("Wrong Argument. Using Default dataset gaussian_quantiles")
-        import sys
-        sys.exit()
+        dataset = "C"
 
     
 else:
-    dataset_option = "S"
-    train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = load_dataset_SIGNS()
-    train_set_x = train_set_x_orig.reshape(train_set_x_orig.shape[0],-1).T
-    print(train_set_x.shape)
-    print(test_set_x_orig.shape)
-    test_set_x = test_set_x_orig.reshape(test_set_x_orig.shape[0],-1).T
-    print(test_set_x.shape)
-    num_px = train_set_x_orig.shape[1]
-        
-    X = train_set_x/255
-    Y = train_set_y
-    X_test = test_set_x/255
-    Y_test = test_set_y
-    print(Y_test)
-
-    # One Hot Encoding
-    dict = {'Y' : Y, 
-            'Y_test' : Y_test}
-    dict = one_hot_encoding(dict)
-    Y = dict['Y']
-    Y_test= dict["Y_test"]
-    del dict
-    print(Y)
-
-    print("Y.shape : " + str(Y.shape))
-    print("X.shape : " + str(X.shape))
-    print("Y_test.shape : " + str(Y_test.shape))
-    print("X_test.shape : " + str(X_test.shape))
+    X, Y = gaussian_quantiles
+    X, Y = X.T, Y.reshape(1, Y.shape[0])
+    print(X.shape)
+    print(Y.shape)
   
     
 
@@ -289,13 +289,13 @@ def layer_sizes(X, Y):
     return n_x, n_y
 
 def initialize_parameters(layer_dims):
-    parameters = {}
-    L = len(layer_dims) - 1
 
-    tf.set_random_seed(1)
-    for l in range(1, L + 1):
-        parameters["W" + str(l)] = tf.get_variable(name = "W" + str(l), shape = (layer_dims[l], layer_dims[l - 1]), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 1))
-        parameters["b" + str(l)] = tf.get_variable(name = "b" + str(l), shape = (layer_dims[l], 1), dtype = tf.float32, initializer = tf.zeros_initializer())
+    parameters = {}
+    L = len(layer_dims)
+    for l in range(1, L):
+        parameters["W" + str(l)] = (np.random.randn(layer_dims[l], layer_dims[l - 1]))  * np.sqrt(2./layer_dims[l - 1])   #*0.01 #He Initialization
+        parameters["b" + str(l)] = np.zeros((layer_dims[l], 1))
+
     return parameters
 
 def initialize_momentum(parameters):
@@ -330,20 +330,25 @@ def initialize_adams(parameters):
     return v, s
 
 
-def forward_prop(X, parameters, activation_func):
+def forward_prop(X, parameters, activation_func, Keep_prob):
     cache = {}
+    try:
+        print(cache["Z" + str(l)])
+    except:
+        print("Not Found")
+        pass
     activations = {}
     activations["A" + str(0)] = X
     L = len(parameters)//2
 
     for l in range(1, L):
-        cache["Z" + str(l)] = tf.matmul(parameters["W" + str(l)], activations["A" + str(l - 1)]) + parameters["b" + str(l)]
+        cache["Z" + str(l)] = np.dot(parameters["W" + str(l)], activations["A" + str(l - 1)]) + parameters["b" + str(l)]
         if(activation_func == "sigmoid"):
-            activations["A" + str(l)] = tf.sigmoid(cache["Z" + str(l)])
+            activations["A" + str(l)] = sigmoid(cache["Z" + str(l)])
         elif(activation_func == "relu"):
-            activations["A" + str(l)] = tf.nn.relu(cache["Z" + str(l)])
+            activations["A" + str(l)] = relu(cache["Z" + str(l)])
         elif(activation_func == "tanh"):
-            activations["A" + str(l)] = tf.tanh(cache["Z" + str(l)])
+            activations["A" + str(l)] = np.tanh(cache["Z" + str(l)])
         else:
             print("Error. Invalid Activation Function.")
         
@@ -354,137 +359,228 @@ def forward_prop(X, parameters, activation_func):
         #activations["A" + str(l)] /= Keep_prob
         
 
-    cache["Z" + str(L)] = tf.matmul(parameters["W" + str(L)], activations["A" + str(L - 1)]) + parameters["b" + str(L)]
+    cache["Z" + str(L)] = np.dot(parameters["W" + str(L)], activations["A" + str(L - 1)]) + parameters["b" + str(L)]
     #activations["A" + str(L)] = sigmoid(cache["Z" + str(L)])
 
+    # Softmax Classifier Activation
+    t = np.exp(cache["Z" + str(L)])
+    activations["A" + str(L)] = t/(np.sum(t))
 
+    
+    
     ## The Dropout could've been iniatilized by running another for-loop over the activations 
     ##  but in the present way, there's no need of another for-loop
 
-    return cache["Z" + str(L)]
+    return cache, activations
 
 
-def compute_cost(ZL, Y):    
+def L2_reg_cost(parameters, lambd, m):
+    L = len(parameters)//2
+    L2_cost = 0
+    for l in range(1,L + 1):
+        L2_cost = np.sum(parameters["W" + str(l)]**2) + L2_cost
+
+    L2_cost = (lambd/(2*m))*L2_cost
+    return L2_cost
+
+def compute_cost(AL, Y, parameters, lambd):
+    m = Y.shape[1]
+    #cost = (-np.sum(np.multiply(Y, np.log(AL)) + np.multiply(1 - Y,np.log(1 - AL)))/m)
+    
     # Softmax Loss Function
-    ZL = tf.transpose(ZL)
-    Y = tf.transpose(Y)
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = ZL, labels = Y))
-
+    cost = -(np.sum(np.multiply(Y, np.log(AL))))/m
+    if(lambd != 0):
+        cost = cost + L2_reg_cost(parameters, lambd, m)
+    cost = np.squeeze(cost)         # makes sure cost is the dimension we expect. E.g., turns [[17]] into 17 
 
     return cost
 
-def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activation_func = "sigmoid", lambd = 0.8, learning_rate = 1,
-            num_epoch = 10000, mini_batch_size = 256, beta1 = 0.9, beta2 = 0.999, print_cost = False):
-    # n_L = Number of Hidden Layers
-    m = X_train.shape[1]
-    L = n_L + 1
-    layer_dims.append(Y_train.shape[0])
-    layer_dims = np.hstack([X_train.shape[0], layer_dims])
 
-    print("Number of Layers : " + str(L))
-    print("Layer dimensions : " + str(layer_dims))
+def back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob):
+    grads = {}
+    L = len(parameters)//2
+    m = Y.shape[1]
+
+    AL = activations["A" + str(L)]
     
-    ops.reset_default_graph()               # Clears the default graph stack and resets the global default graph.   To be able to rerun the model without overwriting tf variables
-    tf.set_random_seed(1)
-
-    X, Y = create_placeholders(layer_dims[0], layer_dims[-1])
-    
-    parameters = initialize_parameters(layer_dims)
-
-    ZL = forward_prop(X, parameters, activation_func)
-
-    cost = compute_cost(ZL, Y)
-
-    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
-
-    #if(optimizer == "momentum"):
-    #    optimize = tf.train.MomentumOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "rmsprop"):
-    #    optimize = tf.train.RMSPropOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "adams"):
-    #    optimize = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "gd"):
-    #    optimize = tf.train.GradientDescentOptimizer(learning_rate = learning_rate).minimize(cost)
-    #else:
-    #    print("Optimizer Algorithm Not Supported")
-
-    seed = 3
-    costs = []
-
-    # Initialize all the variables
-    init = tf.global_variables_initializer()
-
-        
-    with tf.Session() as sess:
-        sess.run(init)
-        for i in range(num_epoch):
-            # Define the random minibatches. We increment the seed to reshuffle differently the dataset after each epoch
-            seed = seed + 1
-            minibatches = random_mini_batches(X_train, Y_train, mini_batch_size, seed)
-            num_mini_batches = int(m/mini_batch_size)
-            epoch_cost = 0.
-
-            for minibatch in minibatches:
-                (minibatch_X, minibatch_Y) = minibatch
-
-                # IMPORTANT: The line that runs the graph on a minibatch.
-                # Run the session to execute the "optimizer" and the "cost", the feedict should contain a minibatch for (X,Y).
-
-                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict = {X: minibatch_X, Y: minibatch_Y})
-
-                epoch_cost += minibatch_cost / num_mini_batches
-
-
-            #learning_rate /=  (1 + i)
-            if(learning_rate == 0):
-                break
-
-
-            if(i%100 == 0 and override == 0):
-                costs.append(epoch_cost)
-            if(print_cost):
-                print("Cost after Epoch %i : %f  |  Learning_rate : %f " %(i,epoch_cost,learning_rate))
-
-        parameters = sess.run(parameters)
-        # Calculate the correct predictions
-        correct_prediction = tf.equal(tf.argmax(ZL), tf.argmax(Y))
-
-        # Calculate accuracy on the test set
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-
-        print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
-        print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
+    # Initializing the backpropagation
+    grads["dZ" + str(L)] = AL - Y
 
     
-        return parameters, costs, ZL
 
-def predict(parameters, X, activation_func):
+    for l in reversed(range(1, L + 1)):
+        grads["dW" + str(l)] = (np.dot(grads["dZ" + str(l)], activations["A" + str(l - 1)].T)/m) + ((lambd/m)*parameters["W" + str(l)])
+        grads["db" + str(l)] = np.sum(grads["dZ" + str(l)], axis=1, keepdims = True)/m
+        if(l >= 2):
+            grads["dA" + str(l - 1)] = np.dot(parameters["W"+ str(l)].T, grads["dZ" + str(l)])
+            if(activation_func == "sigmoid"):
+                grads["dZ" + str(l - 1)] = sigmoid_backward(grads["dA" + str(l - 1)], cache["Z" + str(l - 1)])
+            elif(activation_func == "relu"):
+                grads["dZ" + str(l - 1)] = relu_backward(grads["dA" + str(l - 1)], cache["Z" + str(l - 1)])
+            elif(activation_func == "tanh"):
+                grads["dZ" + str(l - 1)] = tanh_backward(grads["dA" + str(l - 1)], cache["Z" + str(l - 1)])
+            
+            #Dropout
+            #grads["dA" + str(l - 1)] = np.multiply(grads["dA" + str(l - 1)], cache["d" + str(l - 1)])
+            
+            #grads["dA" + str(l - 1)] /= Keep_prob
+
+    return grads
+
+
+def update_parameters(grads, learning_rate, parameters):
     L = len(parameters)//2
 
     for l in range(1, L + 1):
-        parameters["W" + str(l)] = tf.convert_to_tensor(parameters["W" + str(l)])
-        parameters["b" + str(l)] = tf.convert_to_tensor(parameters["b" + str(l)])
+        parameters["W" + str(l)] = parameters["W" + str(l)] - learning_rate*grads["dW" + str(l)]
+        parameters["b" + str(l)] = parameters["b" + str(l)] - learning_rate*grads["db" + str(l)]
 
-    x = tf.placeholder(dtype = tf.float32, shape = (X.shape[0], X.shape[1]))
+    return parameters
 
-    ZL = forward_prop(X, parameters, activation_func)
-    p = tf.argmax(ZL)
+def update_parameters_momentum(grads, learning_rate, parameters, v, beta1 = 0.9):
+    L = len(parameters)//2
 
-    sess = tf.Session()
-    predictions = sess.run(p, feed_dict = {x: X})
+    for l in range(1, L + 1):
+        v["dW" + str(l)] = beta1*v["dW" + str(l)] + ((1 - beta1)*(grads["dW" + str(l)]))
+        v["db" + str(l)] = beta1*v["db" + str(l)] + ((1 - beta1)*(grads["db" + str(l)]))
+
+        parameters["W" + str(l)] = parameters["W" + str(l)] - (learning_rate*v["dW" + str(l)])
+        parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate*v["db" + str(l)])
+
+    return parameters
+
+def update_parameters_rmsprop(grads, learning_rate, parameters, s, beta2 = 0.999 , epsilon = 1e-8):
+    L = len(parameters)//2
+
+    for l in range(1, L + 1):
+        s["dW" + str(l)] = beta2*s["dW" + str(l)] + ((1 - beta2)*(grads["dW" + str(l)]**2))
+        s["db" + str(l)] = beta2*s["db" + str(l)] + ((1 - beta2)*(grads["db" + str(l)]**2))
+
+        parameters["W" + str(l)] = parameters["W" + str(l)] - (learning_rate*(grads["dW" + str(l)] / np.sqrt(s["dW" + str(l)] + epsilon)))
+        parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate*(grads["db" + str(l)] / np.sqrt(s["db" + str(l)] + epsilon)))
+
+    return parameters
+
+def update_parameters_adams(grads, learning_rate, parameters, v, s, t, beta1 = 0.9,  beta2 = 0.999 , epsilon = 1e-8):
+    L = len(parameters)//2
+    v_corrected = {}
+    s_corrected = {}
+
+    for l in range(1, L + 1):
+        v["dW" + str(l)] = beta1*v["dW" + str(l)] + ((1 - beta1)*(grads["dW" + str(l)]))
+        v["db" + str(l)] = beta1*v["db" + str(l)] + ((1 - beta1)*(grads["db" + str(l)]))
+
+        v_corrected["dW" + str(l)] = v["dW" + str(l)]/(1 - (beta1**t))
+        v_corrected["db" + str(l)] = v["db" + str(l)]/(1 - (beta1**t))
+
+        s["dW" + str(l)] = beta2*s["dW" + str(l)] + ((1 - beta2)*(grads["dW" + str(l)]**2))
+        s["db" + str(l)] = beta2*s["db" + str(l)] + ((1 - beta2)*(grads["db" + str(l)]**2))
+
+        s_corrected["dW" + str(l)] = s["dW" + str(l)]/(1 - (beta2**t))
+        s_corrected["db" + str(l)] = s["db" + str(l)]/(1 - (beta2**t))
+
+        parameters["W" + str(l)] = parameters["W" + str(l)] - (learning_rate*((v_corrected["dW" + str(l)])/(np.sqrt(s_corrected["dW" + str(l)] + epsilon))))
+        parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate*((v_corrected["db" + str(l)])/(np.sqrt(s_corrected["db" + str(l)] + epsilon))))
+
+    return parameters
+
+
+def nn_model(X, Y, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activation_func = "sigmoid", lambd = 0.8, Keep_prob = 0.76, learning_rate = 1,
+            num_epoch = 10000, mini_batch_size = 256, beta1 = 0.9, beta2 = 0.999, print_cost = False):
+    # n_L = Number of Hidden Layers
+
+    L = n_L + 1
+    layer_dims.append(Y.shape[0])
+    layer_dims = np.hstack([X.shape[0], layer_dims])
+
+    print("Number of Layers : " + str(L))
+    print("Layer dimensions : " + str(layer_dims))
+
+    X, Y = create_placeholders(layer_dims[0], layer_dims[-1])
+
+    parameters = initialize_parameters(layer_dims)
+
+    if(optimizer == "momentum"):
+        v = initialize_momentum(parameters)
+    elif(optimizer == "rmsprop"):
+        s = initialize_rmsprop(parameters)
+    elif(optimizer == "adams"):
+        v, s = initialize_adams(parameters)
+    else:
+        print("Invalid Optimizer Algorithm")
+
+    seed = 10
+    t = 0
+    costs = []
+
+    for i in range(num_epoch):
+        # Define the random minibatches. We increment the seed to reshuffle differently the dataset after each epoch
+        seed = seed + 1
+        minibatches = random_mini_batches(X, Y, mini_batch_size, seed)
+        
+
+        for minibatch in minibatches:
+            (X, Y) = minibatch
+            cache, activations = forward_prop(X, parameters, activation_func, Keep_prob)
+
+            cost = compute_cost(activations["A" + str(L)], Y, parameters, lambd)
+
+            grads = back_prop(X, Y, parameters, activations, cache, activation_func, Keep_prob)
+
+            #parameters = update_parameters(grads, learning_rate, parameters)
+            if(optimizer == "momentum"):
+                parameters = update_parameters_momentum(grads, learning_rate, parameters, v, beta1)
+            elif(optimizer == "rmsprop"):
+                parameters = update_parameters_rmsprop(grads, learning_rate, parameters, s, beta2)
+            elif(optimizer == "adams"):
+                t = t + 1
+                parameters = update_parameters_adams(grads, learning_rate, parameters, v, s, t, beta1, beta2)
+            else:
+                print("Invalid Optimizer Algorithm")
+
+        #learning_rate /=  (1 + i)
+        if(learning_rate == 0):
+            break
+
+
+        if(i%100 == 0 and override == 0):
+            costs.append(cost)
+        if(print_cost):
+            print("Cost after Epoch %i : %f  |  Learning_rate : %f " %(i,cost,learning_rate))
+    return parameters, costs
+
+def predict(parameters, X, activation_func):
+    global Keep_prob
+    Keep_prob = 1
+    _, activations = forward_prop(X, parameters, activation_func, Keep_prob = 1)
  
-    return predictions
- 
+    AL = activations["A" + str(len(parameters)//2)]
+    print(AL.shape)
+    n_y = AL.shape[0]
+    z = np.argmax(AL, axis=0)
+    #for i in range(AL.shape[1]):
+    #    if AL[z[i],i]>0.50:
+    #        AL[:,i] = 0
+    #        AL[z[i],i] = 1
+    #    else:
+    #        AL[:,i] = 0
+    #print(AL)
+    for i in range(AL.shape[1]):
+        AL[:,i] = 0
+        AL[z[i],i] = 1
+    print(AL)
+    return AL
+
 
 n_L_default = 3
-lambd_default = 0
-lr_default = 0.0001
+lambd_default = 3
+lr_default = 0.5
 ni_default = 10000
 Keep_prob_default = 1
-activation_func_default = "relu"
+activation_func_default = "sigmoid"
 optimizer_default = "adams"
-num_epoch_default = 10
-mini_batch_size_default = 32
+num_epoch_default = 10000
+mini_batch_size_default = 256
 beta1_default = 0.9
 beta2_default = 0.999
 
@@ -496,7 +592,7 @@ class InvalidActivation_Func(UserWarning):
     pass
 class InvalidOptimizer(UserWarning):
     pass
-
+## Build a model with a n_h-dimensional hidden layer
 if override == False:
     n_L = input("Number of Hidden Layers? \t")
     
@@ -648,7 +744,7 @@ if override == False:
 
 else:
     n_L = n_L_default
-    layer_dims = [25, 12]
+    layer_dims = [30, 20, 10]
     lr = lr_default
     lambd = lambd_default
     Keep_prob = Keep_prob_default
@@ -677,12 +773,17 @@ print("Beta2 : " + str(beta2))
 
 print("\n\nTraining The Model")
 start_training_time = time.time()
-learned_parameters, costs, ZL = nn_model(X, Y, X_test, Y_test, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
+learned_parameters, costs = nn_model(X, Y, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, Keep_prob = Keep_prob, learning_rate = lr, 
                                      num_epoch = num_epoch, mini_batch_size = mini_batch_size, beta1 = beta1, beta2 = beta2, print_cost = True)
 end_training_time = time.time()
 
 #End Training the Model
 
+## Print accuracy
+Y_prediction_train = predict(learned_parameters, X, activation_func =  activation_func)
+
+print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - Y)) * 100))
+#print ('Training Accuracy: %d' % float((np.dot(Y,Y_prediction_train.T) + np.dot(1-Y,1-Y_prediction_train.T))/float(Y.size)*100) + '%')
 
 
 def example_X():
@@ -788,3 +889,4 @@ if override == 0:
 end_time = time.time()
 print("Execution Time : " + str(end_time - start_time) + " sec")
 print("Training Time : " + str(end_training_time - start_training_time) + " sec")
+
