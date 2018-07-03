@@ -395,18 +395,16 @@ def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, 
 
     cost = compute_cost(ZL, Y)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
-
-    #if(optimizer == "momentum"):
-    #    optimize = tf.train.MomentumOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "rmsprop"):
-    #    optimize = tf.train.RMSPropOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "adams"):
-    #    optimize = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
-    #elif(optimizer == "gd"):
-    #    optimize = tf.train.GradientDescentOptimizer(learning_rate = learning_rate).minimize(cost)
-    #else:
-    #    print("Optimizer Algorithm Not Supported")
+    if(optimizer == "momentum"):
+        optimize = tf.train.MomentumOptimizer(learning_rate = learning_rate, momentum = beta1).minimize(cost)
+    elif(optimizer == "rmsprop"):
+        optimize = tf.train.RMSPropOptimizer(learning_rate = learning_rate).minimize(cost)
+    elif(optimizer == "adams"):
+        optimize = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
+    elif(optimizer == "gd"):
+        optimize = tf.train.GradientDescentOptimizer(learning_rate = learning_rate).minimize(cost)
+    else:
+        print("Optimizer Algorithm Not Supported")
 
     seed = 3
     costs = []
@@ -430,7 +428,7 @@ def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, 
                 # IMPORTANT: The line that runs the graph on a minibatch.
                 # Run the session to execute the "optimizer" and the "cost", the feedict should contain a minibatch for (X,Y).
 
-                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict = {X: minibatch_X, Y: minibatch_Y})
+                _ , minibatch_cost = sess.run([optimize, cost], feed_dict = {X: minibatch_X, Y: minibatch_Y})
 
                 epoch_cost += minibatch_cost / num_mini_batches
 
@@ -456,7 +454,7 @@ def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, 
         print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
 
     
-        return parameters, costs, ZL
+        return parameters, costs
 
 def predict(parameters, X, activation_func):
     L = len(parameters)//2
@@ -682,7 +680,7 @@ print("Beta2 : " + str(beta2))
 
 print("\n\nTraining The Model")
 start_training_time = time.time()
-learned_parameters, costs, ZL = nn_model(X, Y, X_test, Y_test, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
+learned_parameters, costs = nn_model(X, Y, X_test, Y_test, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
                                      num_epoch = num_epoch, mini_batch_size = mini_batch_size, beta1 = beta1, beta2 = beta2, print_cost = True)
 end_training_time = time.time()
 
