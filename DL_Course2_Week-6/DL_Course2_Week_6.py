@@ -104,8 +104,6 @@ if override == 0:
         Y_test = test_set_y
         print(Y_test)
 
-        X, X_test = normalize(X, X_test)
-
         # One Hot Encoding
         dict = {'Y' : Y, 
                 'Y_test' : Y_test}
@@ -196,7 +194,6 @@ if override == 0:
         X_test = test['X_test'][:]
         Y_test = test['Y_test'][:]
 
-        X, X_test = normalize(X, X_test)
 
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
@@ -325,7 +322,7 @@ def initialize_adams(parameters):
 
 
 def forward_prop(X, parameters, activation_func, Keep_prob):
-    cache= {}
+    cache = {}
     activations = {}
     activations["A" + str(0)] = X
     L = len(parameters)//2
@@ -377,7 +374,7 @@ def compute_cost(AL, Y, parameters, lambd):
     #cost = (-np.sum(np.multiply(Y, np.log(AL)) + np.multiply(1 - Y,np.log(1 - AL)))/m)
     
     # Softmax Loss Function
-    cost = -(np.sum(np.multiply(Y, np.log(AL))))
+    cost = -(np.sum(np.multiply(Y, np.log(AL))))/m
     if(lambd != 0):
         cost = cost + L2_reg_cost(parameters, lambd, m)
     cost = np.squeeze(cost)         # makes sure cost is the dimension we expect. E.g., turns [[17]] into 17 
