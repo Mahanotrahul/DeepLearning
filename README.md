@@ -5,18 +5,18 @@ Started as a small initiative to learn the aspects of Deep Neural Nets, this lib
 
 This library is just a collection of programs solicited for learning use only. If you wish to use the code for your personal commercial purposes, do remember to cite this library in your codes and do not forget to give a star. :)
 
-### Markdown
 
+## Content Details
 
 This Library includes many parts. The latest week's (Week-6 and Week-7 as of now) is the one to be used for learning.
 Week-6 is the hardcoded programs whereas Week-7 uses tensors and tensorflow DeepLearning Framework to do computations.
 # **Week-6**
-## **Week-7**
+# **Week-7**
 
 
 
 
-### Support or Contact
+## Support or Contact
 
 Having trouble or if you have any queries regarding this library, please drop a mail on [thecodeboxed@gmail.com](mailto:thecodeboxed@gmail.com) and I’ll help you sort it out.
 
