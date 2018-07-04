@@ -7,7 +7,7 @@ This library is just a collection of programs solicited for learning use only. I
 
 ### Markdown
 
-```markdown
+
 This Library includes many parts. The latest week's (Week-6 and Week-7 as of now) is the one to be used for learning.
 Week-6 is the hardcoded programs whereas Week-7 uses tensors and tensorflow DeepLearning Framework to do computations.
 # **Week-6**
