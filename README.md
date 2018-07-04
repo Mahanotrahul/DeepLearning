@@ -1,37 +1,25 @@
-## Welcome to GitHub Pages
+## Welcome to DeepLearning Library by Rahul Mahanot
 
-You can use the [editor on GitHub](https://github.com/Mahanotrahul/DeepLearning/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+This DeepLearning Library is an open-source software library for numerical computation for Deep Neural Networks in Python. It was developed as a part of my personal hard-coded Deep Neural Network Programs in Python.
+Started as a small initiative to learn the aspects of Deep Neural Nets, this library has since grown into a full-fledged collection of Programs that can be used to learn what actually happens inside the Deep and Deep layers of the Nets.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+This library is just a collection of programs solicited for learning use only. If you wish to use the code for your personal commercial purposes, do remember to cite this library in your codes and do not forget to give a star. :)
 
 ### Markdown
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
 ```markdown
-Syntax highlighted code block
+This Library includes many parts. The latest week's (Week-6 and Week-7 as of now) is the one to be used for learning.
+Week-6 is the hardcoded programs whereas Week-7 uses tensors and tensorflow DeepLearning Framework to do computations.
+# **Week-6**
+## **Week-7**
 
-# Header 1
-## Header 2
-### Header 3
 
-- Bulleted
-- List
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Mahanotrahul/DeepLearning/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
 
 ### Support or Contact
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Having trouble or if you have any queries regarding this library, please drop a mail on [thecodeboxed@gmail.com](mailto:thecodeboxed@gmail.com) and I’ll help you sort it out.
+
+
+Thank you!!
+Have Fun (Deep)Learning. :)
