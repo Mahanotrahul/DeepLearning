@@ -364,16 +364,28 @@ def forward_prop(X, parameters, activation_func):
     return cache["Z" + str(L)]
 
 
-def compute_cost(ZL, Y):    
+def compute_cost(ZL, Y, lambd):    
     # Softmax Loss Function
     ZL = tf.transpose(ZL)
     Y = tf.transpose(Y)
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = ZL, labels = Y))
 
+    
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = ZL, labels = Y))
+    
+    if(lambd != 0 and type(lambd) == "float"):
+        try:
+            regularizer = tf.contrib.layers.l2_regularizer(scale = lambd)
+            l2_weights = tf.get_variable(name = "l2_weights",shape = (1,1), regularizer = regularizer)
+            reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_term = tf.contrib.layers.apply_regularization(regularizer, reg_variables)
+            cost += reg_term
+        except Exception as e:
+            print(e)
+            print("Problem with Regularisation")
 
     return cost
 
-def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activation_func = "sigmoid", lambd = 0.8, learning_rate = 1,
+def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, optimizer = "adams", activation_func = "sigmoid", lambd = 0.001, learning_rate = 1,
             num_epoch = 10000, mini_batch_size = 256, beta1 = 0.9, beta2 = 0.999, print_cost = False):
     # n_L = Number of Hidden Layers
     m = X_train.shape[1]
@@ -393,7 +405,7 @@ def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, 
 
     ZL = forward_prop(X, parameters, activation_func)
 
-    cost = compute_cost(ZL, Y)
+    cost = compute_cost(ZL, Y, lambd)
 
     if(optimizer == "momentum"):
         optimize = tf.train.MomentumOptimizer(learning_rate = learning_rate, momentum = beta1).minimize(cost)
@@ -480,7 +492,7 @@ def predict(parameters, X, activation_func):
  
 
 n_L_default = 3
-lambd_default = 0
+lambd_default = 0.0
 lr_default = 0.0001
 ni_default = 10000
 Keep_prob_default = 1
