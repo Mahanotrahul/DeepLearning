@@ -1,0 +1,12 @@
+Dataset_option : Nb
+Train_Accuracy : 100.0 %
+Test_Accuracy : 99.474 %
+Training_Time : 571.1594126224518 sec
+Activation_Function : relu
+Layer_dims : [100, 80, 50, 20, 10]
+Learning_rate : 0.001
+Optimizer : adams
+Num_epoch : 100
+Regularization Parameter (lambda) : 0.001
+Dropout Parameter (Keep_prob) : 1.0
+Mini_Batch Size : 2000

@@ -381,7 +381,7 @@ def compute_cost(ZL, Y, lambd):
             cost += reg_term
         except Exception as e:
             print(e)
-            print("Problem with Regularisation")
+            print("Problem with L2 Regularisation")
 
     return cost
 
@@ -461,12 +461,12 @@ def nn_model(X_train, Y_train, X_test, Y_test, layer_dims = [20,10,5], n_L = 3, 
 
         # Calculate accuracy on the test set
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-
-        print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
+        train_accuracy = accuracy.eval({X: X_train, Y: Y_train})*100
+        print ("Train Accuracy:" + str(train_accuracy))
         print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
 
     
-        return parameters, costs
+        return parameters, costs, train_accuracy
 
 def predict(parameters, X, activation_func):
     L = len(parameters)//2
@@ -692,10 +692,10 @@ print("Beta2 : " + str(beta2))
 
 print("\n\nTraining The Model")
 start_training_time = time.time()
-learned_parameters, costs = nn_model(X, Y, X_test, Y_test, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
+learned_parameters, costs, train_accuracy = nn_model(X, Y, X_test, Y_test, layer_dims, n_L = n_L, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
                                      num_epoch = num_epoch, mini_batch_size = mini_batch_size, beta1 = beta1, beta2 = beta2, print_cost = True)
 end_training_time = time.time()
-
+training_time = str(end_training_time - start_training_time) + " sec"
 #End Training the Model
 
 
@@ -750,7 +750,6 @@ def example_N():
         return
 
 def example_Nb():
-    print(X_test.shape)
     sel = np.random.randint(1, X_test.shape[1])
     plt.imshow(X_test[:,sel].reshape(28, 28))
     plt.title("Original Value  :  " + str(np.argmax(Y_test[:,sel])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[:,sel])))
@@ -768,26 +767,30 @@ def example_Nb():
 if override == 0:
     if dataset_option == "X":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        test_accuracy = 100 - np.mean(np.abs(Y_prediction_test - Y_test))*100
+        print("test accuracy: {} %".format(test_accuracy))
         #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
         num_px = train_set_x_orig.shape[1]
         example_X()
     elif dataset_option == "S":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        test_accuracy = 100 - np.mean(np.abs(Y_prediction_test - Y_test))*100
+        print("test accuracy: {} %".format(test_accuracy))
         example_S()
     elif dataset_option == "N":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        test_accuracy = 100 - np.mean(np.abs(Y_prediction_test - Y_test))*100
         print(Y_test.shape)
         print(Y_prediction_test.shape)
         print(Y_prediction_test)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        print("test accuracy: {} %".format(test_accuracy))
         example_N()
     elif dataset_option == "Nb":
         Y_prediction_test  =  predict(learned_parameters, X_test, activation_func =  activation_func)
+        test_accuracy = 100 - np.mean(np.abs(Y_prediction_test - Y_test))*100
         print(Y_test.shape)
         print(Y_prediction_test.shape)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        print("test accuracy: {} %".format(test_accuracy))
         example_Nb()
     else:
         #plot the decision boundary
@@ -802,10 +805,27 @@ if override == 0:
     plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " Epochs : " + str(num_epoch))
     plt.show()
 
-
-
+Test_Result_folder_name = "Test_Results\\" + str(dataset_option)
+import os
+files = len(os.listdir(Test_Result_folder_name))
+file_name = Test_Result_folder_name + "\\Trial-" + str(files) + ".txt"
+file = open(file_name, "w+")
+result = ("Dataset_option : " + str(dataset_option) + 
+          "\nTrain_Accuracy : " + str(train_accuracy) + " %" + 
+          "\nTest_Accuracy : " + str(test_accuracy) + " %" + 
+          "\nTraining_Time : " + str(training_time) + 
+          "\nActivation_Function : " + str(activation_func) + 
+          "\nLayer_dims : " + str(layer_dims) + 
+          "\nLearning_rate : " + str(lr) + 
+          "\nOptimizer : " + str(optimizer) + 
+          "\nNum_epoch : " + str(num_epoch) + 
+          "\nRegularization Parameter (lambda) : " + str(lambd) + 
+          "\nDropout Parameter (Keep_prob) : " + str(Keep_prob) + 
+          "\nMini_Batch Size : " + str(mini_batch_size))
+file.write(result)
+file.close()
 
 
 end_time = time.time()
 print("Execution Time : " + str(end_time - start_time) + " sec")
-print("Training Time : " + str(end_training_time - start_training_time) + " sec")
+print("Training Time : " + str(training_time))
