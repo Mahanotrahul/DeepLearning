@@ -133,7 +133,14 @@ if override == 0:
         set_divide = (90*X.shape[1])//100
         X_train = X[:,sel[0:set_divide]]
         X_test = X[:,sel[set_divide:X.shape[1]]]
-        X = X_train
+        X = np.zeros((X_train.shape[1], 20, 20))
+        X_t = np.zeros((X_test.shape[1], 20, 20))
+        for i in range(X_train.shape[1]):
+            X[i, :, :] = X_train[:,i].reshape(20,20).T
+        for i in range(X_test.shape[1]):
+            X_t[i, :, :] = X_test[:, i].reshape(20, 20).T
+        X_train = X
+        X_test = X_t
 
 
 
@@ -152,8 +159,8 @@ if override == 0:
         ##    Y[0,i] = 0
         ##    Y[np.argmax(Y[:,i]), i] = 1
         ##sio.savemat("datasets/Digit_Classification.mat", {"X": X, "Y": Y})
-        Y_train = Y[:,sel[0:set_divide]]
-        Y_test = Y[:,sel[set_divide:Y.shape[1]]]
+        Y_train = Y[:,sel[0:set_divide]].T
+        Y_test = Y[:,sel[set_divide:Y.shape[1]]].T
         Y = Y_train
         print(Y.shape)
         print(Y_test.shape)
@@ -241,10 +248,10 @@ if override == 0:
             print(e)
         
     elif dataset_option == "N":
-        sel = np.random.randint(1, X.shape[1])
-        plt.imshow(X[:,sel].reshape(20, 20), cmap = 'gray_r')
-        plt.title("Number: " + str(np.argmax(Y[:,sel])))
-        plt.xlabel(Y[:,sel])
+        sel = np.random.randint(1, X.shape[0])
+        plt.imshow(X[sel], cmap = "gray_r")
+        plt.title("Number: " + str(np.argmax(Y[sel,:])))
+        plt.xlabel(Y[sel,:])
         plt.show()
     
     elif dataset_option == "Nb":
