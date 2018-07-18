@@ -133,12 +133,12 @@ if override == 0:
         set_divide = (90*X.shape[1])//100
         X_train = X[:,sel[0:set_divide]]
         X_test = X[:,sel[set_divide:X.shape[1]]]
-        X = np.zeros((X_train.shape[1], 20, 20))
-        X_t = np.zeros((X_test.shape[1], 20, 20))
+        X = np.zeros((X_train.shape[1], 20, 20, 1))
+        X_t = np.zeros((X_test.shape[1], 20, 20, 1))
         for i in range(X_train.shape[1]):
-            X[i, :, :] = X_train[:,i].reshape(20,20).T
+            X[i, :, :, 0] = X_train[:,i].reshape(20,20).T
         for i in range(X_test.shape[1]):
-            X_t[i, :, :] = X_test[:, i].reshape(20, 20).T
+            X_t[i, :, :, 0] = X_test[:, i].reshape(20, 20).T
         X_train = X
         X_test = X_t
 
@@ -249,7 +249,7 @@ if override == 0:
         
     elif dataset_option == "N":
         sel = np.random.randint(1, X.shape[0])
-        plt.imshow(X[sel], cmap = "gray_r")
+        plt.imshow(X[sel, : ,: , 0], cmap = "gray_r")
         plt.title("Number: " + str(np.argmax(Y[sel,:])))
         plt.xlabel(Y[sel,:])
         plt.show()
@@ -299,6 +299,10 @@ def initialize_parameters(dataset_option):
         parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 3, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         return parameters
+    elif dataset_option == "N":
+        parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 1, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
+        parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
+        return parameters
 
 def forward_prop(X, parameters, dataset_option):
     W1 = parameters["W1"]
@@ -315,7 +319,7 @@ def forward_prop(X, parameters, dataset_option):
 
         P2 = tf.nn.max_pool(A2, ksize = (1, 4, 4, 1), strides = (1, 4, 4, 1), padding = "SAME")
         P2 = tf.contrib.layers.flatten(P2)
-        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs= 6, activation_fn = None)
+        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs = 6, activation_fn = None)
 
         return Z3
     elif(dataset_option == "X"):
@@ -329,7 +333,21 @@ def forward_prop(X, parameters, dataset_option):
 
         P2 = tf.nn.max_pool(A2, ksize = (1, 4, 4, 1), strides = (1, 4, 4, 1), padding = "SAME")
         P2 = tf.contrib.layers.flatten(P2)
-        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs= 2, activation_fn = None)
+        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs = 2, activation_fn = None)
+
+        return Z3
+    elif(dataset_option == "N"):
+        Z1 = tf.nn.conv2d(X, W1, strides = (1, 1, 1, 1), padding = "SAME")
+        A1 = tf.nn.relu(Z1)
+
+        P1 = tf.nn.max_pool(A1, ksize = (1, 8, 8, 1), strides = (1, 8, 8, 1), padding = "SAME")
+
+        Z2 = tf.nn.conv2d(P1, W2, (1, 1, 1, 1), padding = "SAME")
+        A2 = tf.nn.relu(Z2)
+
+        P2 = tf.nn.max_pool(A2, ksize = (1, 4, 4, 1), strides = (1, 4, 4, 1), padding = "SAME")
+        P2 = tf.contrib.layers.flatten(P2)
+        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs= 10, activation_fn = None)
 
         return Z3
 
