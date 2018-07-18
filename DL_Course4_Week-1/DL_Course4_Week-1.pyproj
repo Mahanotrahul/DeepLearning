@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>54a77035-dd79-4713-98ec-6cc75c24e45d</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>DL_Course4_Week_1.py</StartupFile>
+    <StartupFile>ConvNet_Model_Tf.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DL_Course4_Week-1</Name>
     <RootNamespace>DL_Course4_Week-1</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
