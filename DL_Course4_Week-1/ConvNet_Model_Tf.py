@@ -172,10 +172,19 @@ if override == 0:
     
     elif dataset_option == "Nb":
         test = sio.loadmat('..\\..\\..\\..\\..\\datasets\\Digit_Classification-BigDataset.mat')
-        X = test['X'][:]
-        Y = test['Y'][:]
+        X_train = test['X'][:]
+        Y = test['Y'][:].T
         X_test = test['X_test'][:]
-        Y_test = test['Y_test'][:]
+        Y_test = test['Y_test'][:].T
+
+        X = np.zeros((X_train.shape[1], 28, 28, 1))
+        X_t = np.zeros((X_test.shape[1], 28, 28, 1))
+        for i in range(X_train.shape[1]):
+            X[i, :, :, 0] = X_train[:,i].reshape(28,28)
+        for i in range(X_test.shape[1]):
+            X_t[i, :, :, 0] = X_test[:, i].reshape(28, 28)
+        X_train = X
+        X_test = X_t
 
 
         print("Y.shape : " + str(Y.shape))
@@ -255,10 +264,10 @@ if override == 0:
         plt.show()
     
     elif dataset_option == "Nb":
-        sel = np.random.randint(1, X.shape[1])
-        plt.imshow(X[:,sel].reshape(28, 28), cmap = 'gray_r')
-        plt.title("Number: " + str(np.argmax(Y[:,sel])))
-        plt.xlabel(Y[:,sel])
+        sel = np.random.randint(1, X.shape[0])
+        plt.imshow(X[sel, : ,: , 0], cmap = "gray_r")
+        plt.title("Number: " + str(np.argmax(Y[sel,:])))
+        plt.xlabel(Y[sel,:])
         plt.show()
 
     else:
@@ -299,7 +308,7 @@ def initialize_parameters(dataset_option):
         parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 3, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         return parameters
-    elif dataset_option == "N":
+    elif dataset_option == "N" or dataset_option == "Nb":
         parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 1, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         return parameters
@@ -336,7 +345,7 @@ def forward_prop(X, parameters, dataset_option):
         Z3 = tf.contrib.layers.fully_connected(P2, num_outputs = 2, activation_fn = None)
 
         return Z3
-    elif(dataset_option == "N"):
+    elif(dataset_option == "N" or dataset_option == "Nb"):
         Z1 = tf.nn.conv2d(X, W1, strides = (1, 1, 1, 1), padding = "SAME")
         A1 = tf.nn.relu(Z1)
 
@@ -410,7 +419,7 @@ def convnet_model(X_train, Y_train, X_test, Y_test, dataset_option, optimizer = 
                 break
 
 
-            if(i%100 == 0 and override == 0):
+            if(i%10 == 0 and override == 0):
                 costs.append(epoch_cost)
             if(print_cost):
                 print("Cost after Epoch %i : %f  |  Learning_rate : %f " %(i,epoch_cost,learning_rate))
@@ -434,6 +443,26 @@ def convnet_model(X_train, Y_train, X_test, Y_test, dataset_option, optimizer = 
         print("Test Accuracy:", test_accuracy)
                 
         return train_accuracy, test_accuracy, parameters, costs
+
+def predict(parameters, X, dataset_option):
+
+    parameters["W" + str(1)] = tf.convert_to_tensor(parameters["W" + str(1)])
+    parameters["W" + str(2)] = tf.convert_to_tensor(parameters["W" + str(2)])
+
+    x = tf.placeholder(dtype = tf.float32, shape = (X.shape[0], X.shape[1] ,X.shape[2], X.shape[3]))
+
+    ZL = forward_prop(x, parameters, dataset_option)
+    sess = tf.Session()
+    
+
+    predictions = sess.run(ZL, feed_dict = {x: X})
+    predictions = np.exp(predictions)/np.sum(np.exp(predictions))
+    z = np.argmax(predictions, axis=0)
+    for i in range(ZL.shape[1]):
+        predictions[:,i] = 0
+        predictions[z[i],i] = 1
+ 
+    return predictions
 
 lr_default = 0.009
 lambd_default = 0.0
@@ -592,7 +621,7 @@ print("Beta2 : " + str(beta2))
 
 print("\n\nTraining The Model")
 start_training_time = time.time()
-_, _, parameters, _ = convnet_model(X, Y, X_test, Y_test, dataset_option, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
+_, _, learned_parameters, _ = convnet_model(X, Y, X_test, Y_test, dataset_option, optimizer = optimizer, activation_func = activation_func, lambd = lambd, learning_rate = lr, 
                                      num_epoch = num_epoch, mini_batch_size = mini_batch_size, beta1 = beta1, beta2 = beta2, print_cost = True)
 end_training_time = time.time()
 
@@ -600,4 +629,114 @@ end_training_time = time.time()
 
 
 
+#def example_X():
+#    try:
+#        # Example of a picture
+#        sel = np.random.randint(1, X_test.shape[1])
+#        plt.imshow(X_test[sel,:,:,0].reshape((num_px, num_px)))
+#        plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel,:])))
+#        plt.show()
+
+#        try:
+#            input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+#        except:
+#            return
+#        if input1 == "1":
+#            example_X()
+#        else:
+#            return
+#    except:
+#        return
+
+#def example_S():
+#    sel = np.random.randint(1, X_test.shape[1])
+#    plt.imshow(X_test[sel,:,:,0].reshape((num_px, num_px)))
+#    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel,:])))
+#    plt.show()
+
+#    try:
+#        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+#    except:
+#        example_number
+#    if input1 == "1":
+#        example_S()
+#    else:
+#        return
+
+#def example_N():
+#    sel = np.random.randint(1, X_test.shape[1])
+#    plt.imshow(X_test[sel,:,:,0].reshape(20, 20))
+#    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel,:])))
+#    plt.show()
+
+#    try:
+#        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+#    except:
+#        return
+#    if input1 == "1":
+#        example_N()
+#    else:
+#        return
+
+#def example_Nb():
+#    print(X_test.shape)
+#    sel = np.random.randint(1, X_test.shape[1])
+#    plt.imshow(X_test[sel, :, :, 0].reshape(28, 28))
+#    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel, :])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel, :])))
+#    plt.show()
+
+#    try:
+#        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+#    except:
+#        return
+#    if input1 == "1":
+#        example_Nb()
+#    else:
+#        return
+
+#if override == 0:
+#    if dataset_option == "X":
+#        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+#        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+#        #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
+#        num_px = X_test.shape[1]
+#        example_X()
+#    elif dataset_option == "S":
+#        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+#        num_px = X_test.shape[1]
+#        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+#        example_S()
+#    elif dataset_option == "N":
+#        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+#        print(Y_test.shape)
+#        print(Y_prediction_test.shape)
+#        print(Y_prediction_test)
+#        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+#        example_N()
+#    elif dataset_option == "Nb":
+#        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+#        print(Y_test.shape)
+#        print(Y_prediction_test.shape)
+#        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+#        example_Nb()
+#    else:
+#        #plot the decision boundary
+#        plot_decision_boundary(lambda x: predict(learned_parameters, x.T, activation_func =  activation_func), X, Y)
+#        plt.title("decision boundary for hidden layer size " + str(4))
+#        plt.show()
+
+#    #plot cost vs iterations
+#    plt.plot(costs)
+#    plt.ylabel('cost')
+#    plt.xlabel('iterations (per hundreds)')
+#    plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " Epochs : " + str(num_epoch))
+#    plt.show()
+
+
+
+
+
+end_time = time.time()
+print("Execution Time : " + str(end_time - start_time) + " sec")
+print("Training Time : " + str(end_training_time - start_training_time) + " sec")
 
