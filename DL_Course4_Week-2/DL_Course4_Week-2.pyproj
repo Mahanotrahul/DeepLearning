@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>20f5c116-a4f9-4ae1-976f-17cc4c412022</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>DL_Course4_Week_2.py</StartupFile>
+    <StartupFile>Keras_Model.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DL_Course4_Week-2</Name>
     <RootNamespace>DL_Course4_Week-2</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
