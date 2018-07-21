@@ -1,3 +1,5 @@
+import time
+start_time = time.time()
 import numpy as np
 from keras import layers
 from keras.layers import Input, Add, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D, AveragePooling2D, MaxPooling2D, GlobalMaxPooling2D
@@ -270,7 +272,7 @@ if override == 0:
             index = int(input("Index of the picture( 0 -  %i )  ? " %X.shape[1]))
             print("Selected Index Number : %i" %index)
             print(str(train_set_y[:,index]) + "It's a " + classes[np.squeeze(train_set_y[:,index])].decode("utf-8") + " picture. ")
-            plt.imshow(train_set_x_orig[index])
+            plt.imshow(X[index,:,:,:])
             plt.show()
 
         except Exception as e:
@@ -399,8 +401,7 @@ def convolutional_block(X, f, filters,  stage, block, s = 2):
 
     return X
 
-tf.reset_default_graph()
-
+#tf.reset_default_graph()
 #with tf.Session() as test:
 #    np.random.seed(1)
 #    A_prev = tf.placeholder("float", [3, 4, 4, 6])
@@ -409,3 +410,178 @@ tf.reset_default_graph()
 #    test.run(tf.global_variables_initializer())
 #    out = test.run([A], feed_dict={A_prev: X, K.learning_phase(): 0})
 #    print("out = " + str(out[0][1][1][0]))
+
+def ResNet50(input_shape = (64, 64, 3), classes = 6):
+    X_input = Input(input_shape)
+
+    X = ZeroPadding2D(padding = (3, 3))(X_input)
+
+    # Stage 1
+    X = Conv2D(64, (7, 7), strides = (2, 2), padding = "valid", kernel_initializer = glorot_uniform(seed = 0), name = "conv1")(X)
+    X = BatchNormalization(axis = 3, name = "bn_conv1")(X)
+    X = Activation("relu")(X) 
+    X = MaxPooling2D(pool_size = (3, 3), strides = (2, 2))(X)
+
+    # Stage 2
+    X = convolutional_block(X, f = 3, filters = [64, 64, 256], stage = 2, block = 'a', s = 1)
+    X = identity_block(X, f = 3, filters = [64, 64, 256], stage = 2, block = 'b')
+    X = identity_block(X, f = 3, filters = [64, 64, 256], stage = 2, block = 'c')
+
+    ## Stage 3
+    #X = convolutional_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'a', s = 2)
+    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'b')
+    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'c')
+    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'd')
+
+    ## Stage 4
+    #X = convolutional_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'a', s = 2)
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'b')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'c')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'd')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'e')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'f')
+
+    ## Stage 5
+    #X = convolutional_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'a', s = 2)
+    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'b')
+    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'c')
+
+    X = AveragePooling2D(pool_size = (2, 2), name = "avg_pool")(X)
+    X = Flatten()(X)
+    X = Dense(classes, activation='softmax', name='fc' + str(classes), kernel_initializer = glorot_uniform(seed=0))(X)
+
+    model = Model(inputs = X_input, outputs = X, name = "ResNet50")
+    return model
+
+model = ResNet50(input_shape = (64, 64, 3), classes = 2)
+
+print("### Compiling Model. ###")
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+print("### Running Model. ###")
+start_training_time = time.time()
+model.fit(X, Y, epochs = 1, batch_size = 32)
+end_training_time = time.time()
+
+print("### Evaluating Model. ###")
+preds = model.evaluate(X_test, Y_test)
+print ("Loss = " + str(preds[0]))
+print ("Test Accuracy = " + str(preds[1]))
+print("### Model Evaluation Completed. ###")
+
+def example_X():
+    try:
+        # Example of a picture
+        sel = np.random.randint(1, X_test.shape[1])
+        x = image.img_to_array(X_test[sel, :, :, :])
+        x = np.expand_dims(x, axis=0)
+        x = preprocess_input(x)
+        plt.imshow(X_test[sel,:,:,:].reshape((num_px, num_px, 3)))
+        plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(model.predict(x))))
+        plt.show()
+
+        try:
+            input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+        except Exception as e:
+            print(e)
+            return
+        if input1 == "1":
+            example_X()
+        else:
+            return
+    except:
+        return
+
+def example_S():
+    sel = np.random.randint(1, X_test.shape[1])
+    x = image.img_to_array(X_test[sel, :, :, :])
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    plt.imshow(X_test[sel,:,:,:].reshape((num_px, num_px, 3)))
+    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(model.predict(x))))
+    plt.show()
+
+    try:
+        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+    except:
+        example_number
+    if input1 == "1":
+        example_S()
+    else:
+        return
+
+def example_N():
+    sel = np.random.randint(1, X_test.shape[1])
+    plt.imshow(X_test[sel,:,:,0].reshape(20, 20))
+    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel,:])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel,:])))
+    plt.show()
+
+    try:
+        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+    except:
+        return
+    if input1 == "1":
+        example_N()
+    else:
+        return
+
+def example_Nb():
+    print(X_test.shape)
+    sel = np.random.randint(1, X_test.shape[1])
+    plt.imshow(X_test[sel, :, :, 0].reshape(28, 28))
+    plt.title("Original Value  :  " + str(np.argmax(Y_test[sel, :])) + "\n Predicted Value :" + str(np.argmax(Y_prediction_test[sel, :])))
+    plt.show()
+
+    try:
+        input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
+    except:
+        return
+    if input1 == "1":
+        example_Nb()
+    else:
+        return
+
+if override == 0:
+    if dataset_option == "X":
+        #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+        #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
+        num_px = X_test.shape[1]
+        example_X()
+    elif dataset_option == "S":
+        #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+        num_px = X_test.shape[1]
+        #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        example_S()
+    elif dataset_option == "N":
+        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+        print(Y_test.shape)
+        print(Y_prediction_test.shape)
+        print(Y_prediction_test)
+        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        example_N()
+    elif dataset_option == "Nb":
+        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+        print(Y_test.shape)
+        print(Y_prediction_test.shape)
+        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        example_Nb()
+    else:
+        #plot the decision boundary
+        plot_decision_boundary(lambda x: predict(learned_parameters, x.T, activation_func =  activation_func), X, Y)
+        plt.title("decision boundary for hidden layer size " + str(4))
+        plt.show()
+
+    ##plot cost vs iterations
+    #plt.plot(costs)
+    #plt.ylabel('cost')
+    #plt.xlabel('iterations (per hundreds)')
+    #plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " Epochs : " + str(num_epoch))
+    #plt.show()
+
+
+end_time = time.time()
+print("Execution Time : " + str(end_time - start_time) + " sec")
+print("Training Time : " + str(end_training_time - start_training_time) + " sec")
+
+
