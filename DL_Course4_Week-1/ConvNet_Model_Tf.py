@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 from planar_utils import plot_decision_boundary, load_planar_dataset, load_extra_datasets, load_dataset, load_dataset_SIGNS
 from functions import sigmoid, relu, sigmoid_backward, relu_backward, tanh_backward, one_hot_encoding, random_mini_batches, normalize
+from kt_utils import *
 
 #import mnist
 
@@ -35,7 +36,8 @@ if override == True:
 # Datasets
 if override == 0:
 
-    dataset_option = input("Which Dataset you want to run the NN Model?X: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification\nNb : Hand-Written Digits BigDatset [MNIST Datset]\t")
+    dataset_option = (input("Which Dataset you want to run the ConvNet Model on?\nX: Image-Classification\nS : SIGNS Dataset\nN: Hand-Written Digit Classification" +
+                            "\nNb : Hand-Written Digits BigDatset [MNIST Datset]\nH: Happy Face Detection\t"))
     if dataset_option == "X":
         train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = load_dataset()
         train_set_x = train_set_x_orig
@@ -191,6 +193,29 @@ if override == 0:
         print("X.shape : " + str(X.shape))
         print("Y_test.shape : " + str(Y_test.shape))
         print("X_test.shape : " + str(X_test.shape))
+    elif dataset_option == "H":
+        X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()
+
+        X_train = X_train_orig/255
+        X_test = X_test_orig/255
+        X = X_train
+
+        # One Hot Encoding
+        dict = {'Y' : Y_train_orig, 
+                'Y_test' : Y_test_orig}
+        dict = one_hot_encoding(dict)
+        Y_train = dict['Y'].T
+        Y_test= dict["Y_test"].T
+        del dict
+
+        Y = Y_train
+
+        print ("number of training examples = " + str(X_train.shape[0]))
+        print ("number of test examples = " + str(X_test.shape[0]))
+        print ("X_train shape: " + str(X_train.shape))
+        print ("Y_train shape: " + str(Y_train.shape))
+        print ("X_test shape: " + str(X_test.shape))
+        print ("Y_test shape: " + str(Y_test.shape))
 
     else:
         print("Wrong Argument. Using Default dataset gaussian_quantiles")
@@ -269,6 +294,12 @@ if override == 0:
         plt.title("Number: " + str(np.argmax(Y[sel,:])))
         plt.xlabel(Y[sel,:])
         plt.show()
+    elif dataset_option == "H":
+        sel = np.random.randint(1, X_train.shape[0])
+        plt.imshow(X[sel, : ,: , :])
+        plt.title("Happy_Face: " + str(np.argmax(Y_train[sel,:])))
+        plt.xlabel(Y[sel,:])
+        plt.show()
 
     else:
         # Visualize the data
@@ -310,6 +341,10 @@ def initialize_parameters(dataset_option):
         return parameters
     elif dataset_option == "N" or dataset_option == "Nb":
         parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 1, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
+        parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
+        return parameters
+    elif dataset_option == "H":
+        parameters["W1"] = tf.get_variable(name = "W1", shape = (4, 4, 3, 8), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         parameters["W2"] = tf.get_variable(name = "W2", shape = (2, 2, 8, 16), dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer(seed = 0))
         return parameters
 
@@ -357,6 +392,20 @@ def forward_prop(X, parameters, dataset_option):
         P2 = tf.nn.max_pool(A2, ksize = (1, 4, 4, 1), strides = (1, 4, 4, 1), padding = "SAME")
         P2 = tf.contrib.layers.flatten(P2)
         Z3 = tf.contrib.layers.fully_connected(P2, num_outputs= 10, activation_fn = None)
+
+        return Z3
+    elif(dataset_option == "H"):
+        Z1 = tf.nn.conv2d(X, W1, strides = (1, 1, 1, 1), padding = "SAME")
+        A1 = tf.nn.relu(Z1)
+
+        P1 = tf.nn.max_pool(A1, ksize = (1, 8, 8, 1), strides = (1, 8, 8, 1), padding = "SAME")
+
+        Z2 = tf.nn.conv2d(P1, W2, (1, 1, 1, 1), padding = "SAME")
+        A2 = tf.nn.relu(Z2)
+
+        P2 = tf.nn.max_pool(A2, ksize = (1, 4, 4, 1), strides = (1, 4, 4, 1), padding = "SAME")
+        P2 = tf.contrib.layers.flatten(P2)
+        Z3 = tf.contrib.layers.fully_connected(P2, num_outputs = 2, activation_fn = None)
 
         return Z3
 
@@ -628,7 +677,6 @@ end_training_time = time.time()
 #End Training the Model
 
 
-
 #def example_X():
 #    try:
 #        # Example of a picture
@@ -731,9 +779,6 @@ end_training_time = time.time()
 #    plt.xlabel('iterations (per hundreds)')
 #    plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " Epochs : " + str(num_epoch))
 #    plt.show()
-
-
-
 
 
 end_time = time.time()
