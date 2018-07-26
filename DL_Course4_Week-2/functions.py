@@ -52,7 +52,7 @@ def relu_backward(dA, Z):
     # When Z <= 0, you should set dz to 0 as well. 
     dZ[Z <= 0] = 0
 
-
+    
     return dZ
 
 def tanh_backward(dA, Z):
@@ -68,12 +68,12 @@ def one_hot_encoding(dict):
     for i in dict:
         Y = dict[i]
         new_rows = np.zeros((np.amax(Y), Y.shape[1]))
-        Y = np.vstack([Y, new_rows])
+        Y = np.vstack([Y, new_rows]).T
 
-        for col in range(Y.shape[1]):
-            value = int(Y[0,col])
-            Y[0,col] = 0
-            Y[value,col] = 1
+        for row in range(Y.shape[0]):
+            value = int(Y[row, 0])
+            Y[row, 0] = 0
+            Y[row, value] = 1
         
         dictt[str(i)] = Y
         del Y

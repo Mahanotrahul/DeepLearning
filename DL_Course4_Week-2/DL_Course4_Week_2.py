@@ -60,12 +60,14 @@ if override == 0:
         X_test = test_set_x/255
         Y_test = test_set_y
 
+        print(Y)
         print(Y_test)
         print("Y_test.shape : " + str(Y_test.shape))
-        print("X_test.shape : " + str(X_test.shape))
+        #print("X_test.shape : " + str(X_test.shape))
         dict = one_hot_encoding(dict = {"Y" : Y, "Y_test" : Y_test})
-        Y = dict["Y"].T
-        Y_test = dict["Y_test"].T
+        Y = dict["Y"]
+        Y_test = dict["Y_test"]
+        print(Y)
         print(Y_test)
 
 
@@ -88,16 +90,17 @@ if override == 0:
         Y = train_set_y
         X_test = test_set_x/255
         Y_test = test_set_y
-        print(Y_test)
+        
+        #print(Y_test)
 
         # One Hot Encoding
         dict = {'Y' : Y, 
                 'Y_test' : Y_test}
         dict = one_hot_encoding(dict)
-        Y = dict['Y'].T
-        Y_test= dict["Y_test"].T
+        Y = dict['Y']
+        Y_test= dict["Y_test"]
         del dict
-        print(Y)
+        #print(Y_test)
 
         print("Y.shape : " + str(Y.shape))
         print("X.shape : " + str(X.shape))
@@ -353,7 +356,7 @@ def identity_block(X, f, filters, stage, block):
     # Third Main Component
     X = Conv2D(F3, (1, 1), strides = (1 ,1), padding = "valid", kernel_initializer = glorot_uniform(seed = 0), name = conv_name_base +  "_2c")(X)
     X = BatchNormalization(axis = 3, name = bn_name_base + "_2c")(X)
-    X = Activation("relu")(X)
+
 
     X = Add()([X_shortcut, X])
     X = Activation("relu")(X)
@@ -388,10 +391,9 @@ def convolutional_block(X, f, filters,  stage, block, s = 2):
     X = BatchNormalization(axis = 3, name = bn_name_base + "_2b")(X)
     X = Activation("relu")(X)
 
-    # Third COmponent
+    # Third Component
     X = Conv2D(F3, (1, 1), strides = (1, 1), padding = "valid", kernel_initializer = glorot_uniform(seed = 0), name = conv_name_base + "_2c")(X)
     X = BatchNormalization(axis = 3, name = bn_name_base + "_2c")(X)
-    X = Activation("relu")(X)
 
     X_shortcut = Conv2D(F3, (1, 1), strides = (s, s), padding = "valid", kernel_initializer = glorot_uniform(seed= 0), name = conv_name_base + "1")(X_shortcut)
     X_shortcut = BatchNormalization(axis = 3, name = bn_name_base + "1")(X_shortcut)
@@ -427,52 +429,60 @@ def ResNet50(input_shape = (64, 64, 3), classes = 6):
     X = identity_block(X, f = 3, filters = [64, 64, 256], stage = 2, block = 'b')
     X = identity_block(X, f = 3, filters = [64, 64, 256], stage = 2, block = 'c')
 
-    ## Stage 3
-    #X = convolutional_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'a', s = 2)
-    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'b')
-    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'c')
-    #X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'd')
+    # Stage 3
+    X = convolutional_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'a', s = 2)
+    X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'b')
+    X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'c')
+    X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'd')
 
-    ## Stage 4
-    #X = convolutional_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'a', s = 2)
-    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'b')
-    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'c')
-    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'd')
-    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'e')
-    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'f')
 
-    ## Stage 5
-    #X = convolutional_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'a', s = 2)
-    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'b')
-    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'c')
-
-    X = AveragePooling2D(pool_size = (2, 2), name = "avg_pool")(X)
+    X = AveragePooling2D(pool_size = (1, 1), name = "avg_pool")(X)
     X = Flatten()(X)
     X = Dense(classes, activation='softmax', name='fc' + str(classes), kernel_initializer = glorot_uniform(seed=0))(X)
 
     model = Model(inputs = X_input, outputs = X, name = "ResNet50")
     return model
 
-model = ResNet50(input_shape = (64, 64, 3), classes = 2)
-
+model = ResNet50(input_shape = (X.shape[1], X.shape[2], X.shape[3]), classes = Y.shape[1])
+#print(model.summary())
 print("### Compiling Model. ###")
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 print("### Running Model. ###")
 start_training_time = time.time()
 model.fit(X, Y, epochs = 1, batch_size = 32)
+
+
+
+while True:
+    try:
+        run_again = int(input("Do you want to run the Model again for 1 epoch more? (1 - Yes | 0 - No) : "))
+        if run_again == 1:
+            model.fit(X, Y, epochs = 1, batch_size = 32)
+        else:
+            break
+    except Exception as e:
+        break
+
 end_training_time = time.time()
 
 print("### Evaluating Model. ###")
+preds = model.evaluate(X_train, Y_train)
+print ("Loss = " + str(preds[0]))
+print ("Train Accuracy = " + str(preds[1]))
+print("\n")
 preds = model.evaluate(X_test, Y_test)
 print ("Loss = " + str(preds[0]))
 print ("Test Accuracy = " + str(preds[1]))
 print("### Model Evaluation Completed. ###")
 
+plot_model(model, to_file='model.png')
+SVG(model_to_dot(model).create(prog='dot', format='svg'))
+
 def example_X():
     try:
         # Example of a picture
-        sel = np.random.randint(1, X_test.shape[1])
+        sel = np.random.randint(1, X_test.shape[0])
         x = image.img_to_array(X_test[sel, :, :, :])
         x = np.expand_dims(x, axis=0)
         x = preprocess_input(x)
@@ -484,16 +494,17 @@ def example_X():
             input1 = input("Show another random Digit Prediction?(1 - YES | 0 - NO)\t")
         except Exception as e:
             print(e)
-            return
+            example_X()
         if input1 == "1":
             example_X()
         else:
             return
-    except:
+    except Exception as e:
+        print(e)
         return
 
 def example_S():
-    sel = np.random.randint(1, X_test.shape[1])
+    sel = np.random.randint(1, X_test.shape[0])
     x = image.img_to_array(X_test[sel, :, :, :])
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
@@ -541,36 +552,38 @@ def example_Nb():
     else:
         return
 
-if override == 0:
-    if dataset_option == "X":
-        #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
-        #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
-        num_px = X_test.shape[1]
-        example_X()
-    elif dataset_option == "S":
-        #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
-        num_px = X_test.shape[1]
-        #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        example_S()
-    elif dataset_option == "N":
-        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
-        print(Y_test.shape)
-        print(Y_prediction_test.shape)
-        print(Y_prediction_test)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        example_N()
-    elif dataset_option == "Nb":
-        Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
-        print(Y_test.shape)
-        print(Y_prediction_test.shape)
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
-        example_Nb()
-    else:
-        #plot the decision boundary
-        plot_decision_boundary(lambda x: predict(learned_parameters, x.T, activation_func =  activation_func), X, Y)
-        plt.title("decision boundary for hidden layer size " + str(4))
-        plt.show()
+def example_test():
+    if override == 0:
+        if dataset_option == "X":
+            #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+            #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+            #print ('Test Accuracy: %d' % float((np.dot(Y_test,Y_prediction_test.T) + np.dot(1-Y_test,1-Y_prediction_test.T))/float(Y_test.size)*100) + '%')
+            print("## Example ##")
+            num_px = X_test.shape[1]
+            example_X()
+        elif dataset_option == "S":
+            #Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+            num_px = X_test.shape[1]
+            #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+            example_S()
+        elif dataset_option == "N":
+            Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+            print(Y_test.shape)
+            print(Y_prediction_test.shape)
+            print(Y_prediction_test)
+            print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+            example_N()
+        elif dataset_option == "Nb":
+            Y_prediction_test  =  predict(learned_parameters, X_test, dataset_option)
+            print(Y_test.shape)
+            print(Y_prediction_test.shape)
+            print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+            example_Nb()
+        else:
+            #plot the decision boundary
+            plot_decision_boundary(lambda x: predict(learned_parameters, x.T, activation_func =  activation_func), X, Y)
+            plt.title("decision boundary for hidden layer size " + str(4))
+            plt.show()
 
     ##plot cost vs iterations
     #plt.plot(costs)
@@ -578,10 +591,18 @@ if override == 0:
     #plt.xlabel('iterations (per hundreds)')
     #plt.title("Learning rate :" + str(lr) + "\nDataset_option : " + str(dataset_option) + "\nlambd : " + str(lambd) + " Epochs : " + str(num_epoch))
     #plt.show()
+#example_test()
 
-
+print(model.summary())
 end_time = time.time()
 print("Execution Time : " + str(end_time - start_time) + " sec")
 print("Training Time : " + str(end_training_time - start_training_time) + " sec")
 
-
+print("\n\n### Loading Trained Model. Please Wait")
+if dataset_option == "S":
+    model = load_model("..\\..\\..\\..\\..\\datasets\\ResNet50_Model\\ResNet50.h5")
+    preds = model.evaluate(X_test, Y_test)
+    print ("Loss = " + str(preds[0]))
+    print ("Test Accuracy = " + str(preds[1]))
+    example_test()
+    print(model.summary())
