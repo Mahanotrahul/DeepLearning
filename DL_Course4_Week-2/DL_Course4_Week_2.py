@@ -184,6 +184,23 @@ if override == 0:
         print("X_test.shape : " + str(X_test.shape))
     
     elif dataset_option == "Nb":
+        #old_v = tf.logging.get_verbosity()
+        #tf.logging.set_verbosity(tf.logging.ERROR)
+
+        #from tensorflow.examples.tutorials.mnist import input_data
+        #mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+        #X_train = (np.vstack([img.reshape(-1,) for img in mnist.train.images])).T
+        #Y_train = (mnist.train.labels).T
+        #X_test = (np.vstack([img.reshape(-1,) for img in mnist.test.images])).T
+        #Y_test = (mnist.test.labels).T
+        #tf.logging.set_verbosity(old_v)
+        #X = X_train.T
+        #Y = Y_train.T
+        #print("Y_test.shape" + str(Y_test.shape))
+        #print("X_test" + str(X_test.shape))
+        #print("X_train" + str(X_train.shape))
+        #print("Y_train" + str(Y_train.shape))
+
         test = sio.loadmat('..\\..\\..\\..\\..\\datasets\\Digit_Classification-BigDataset.mat')
         X_train = test['X'][:]
         Y = test['Y'][:].T
@@ -435,6 +452,19 @@ def ResNet50(input_shape = (64, 64, 3), classes = 6):
     X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'c')
     X = identity_block(X, f = 3, filters = [128, 128, 512], stage = 3, block = 'd')
 
+    ## Stage 4
+    #X = convolutional_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'a', s = 2)
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'b')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'c')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'd')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'e')
+    #X = identity_block(X, f = 3, filters = [256, 256, 1024], stage = 4, block = 'f')
+
+    ## Stage 5
+    #X = convolutional_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'a', s = 2)
+    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'b')
+    #X = identity_block(X, f = 3, filters = [512, 512, 2048], stage = 5, block = 'c')
+
 
     X = AveragePooling2D(pool_size = (1, 1), name = "avg_pool")(X)
     X = Flatten()(X)
@@ -450,7 +480,7 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 
 print("### Running Model. ###")
 start_training_time = time.time()
-model.fit(X, Y, epochs = 1, batch_size = 32)
+model.fit(X, Y, epochs = 1, batch_size = 1024)
 
 
 
@@ -458,7 +488,7 @@ while True:
     try:
         run_again = int(input("Do you want to run the Model again for 1 epoch more? (1 - Yes | 0 - No) : "))
         if run_again == 1:
-            model.fit(X, Y, epochs = 1, batch_size = 32)
+            model.fit(X, Y, epochs = 1, batch_size = 1024)
         else:
             break
     except Exception as e:
@@ -476,7 +506,7 @@ print ("Loss = " + str(preds[0]))
 print ("Test Accuracy = " + str(preds[1]))
 print("### Model Evaluation Completed. ###")
 
-plot_model(model, to_file='model.png')
+plot_model(model, to_file='model_datas.png')
 SVG(model_to_dot(model).create(prog='dot', format='svg'))
 
 def example_X():
